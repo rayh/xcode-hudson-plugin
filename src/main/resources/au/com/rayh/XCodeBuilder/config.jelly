@@ -1,0 +1,28 @@
+
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+  <!--
+    This jelly script is used for per-project configuration.
+
+    See global.jelly for a general discussion about jelly script.
+  -->
+
+    <f:entry title="Configuration" field="configuration"
+      help="/plugin/xcodebuild-hudson-plugin/help-configuration.html">
+        <f:textbox name="xcode.configuration" value="${instance.configuration}" />
+    </f:entry>
+
+    <f:entry title="Update version with build number?" field="updateBuildNumber"
+      help="/plugin/xcodebuild-hudson-plugin/help-updateBuildNumber.html">
+        <f:checkbox name="xcode.updateBuildNumber" checked="${instance.updateBuildNumber}" />
+    </f:entry>
+
+    <f:entry title="Clean before build?" field="cleanBeforeBuild"
+      help="/plugin/xcodebuild-hudson-plugin/help-cleanBeforeBuild.html">
+        <f:checkbox name="xcode.cleanBeforeBuild" checked="${instance.cleanBeforeBuild}" />
+    </f:entry>
+
+<!--    <f:entry title="Build IPA?" field="buildIpa"
+      help="/plugin/xcodebuild-hudson-plugin/help-buildIpa.html">
+        <f:checkbox name="xcode.buildIpa" checkbox="${instance.buildIpa}" />
+    </f:entry>-->
+</j:jelly>
