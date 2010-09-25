@@ -7,8 +7,10 @@ import hudson.util.FormValidation;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.AbstractProject;
+import hudson.model.TaskListener;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
+import java.io.ByteArrayOutputStream;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -58,12 +60,23 @@ public class XCodeBuilder extends Builder {
         EnvVars envs = build.getEnvironment(listener);
 
         // XCode Version
-        launcher.launch().envs(envs).cmds(getDescriptor().xcodebuildPath(), "-version").stdout(listener.getLogger()).pwd(build.getProject().getWorkspace()).join();
+        int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().xcodebuildPath(), "-version").stdout(listener).pwd(build.getProject().getWorkspace()).join();
+        if(returnCode>0) return false;
 
+        
         // Set build number
         if(updateBuildNumber) {
-            launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", "`agvtool mvers -terse1`." + build.getNumber() ).stdout(listener.getLogger()).pwd(build.getProject().getWorkspace()).join();
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(build.getProject().getWorkspace()).join();
+            if(returnCode>0) return false;
+            String marketingVersionNumber = output.toString().trim();
+            String newVersion = marketingVersionNumber + "." + build.getNumber();
+            listener.getLogger().println("CFBundlerShortVersionString is " + marketingVersionNumber + " so new CFBundleVersion will be " + newVersion);
+
+            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", newVersion ).stdout(listener).pwd(build.getProject().getWorkspace()).join();
+            if(returnCode>0) return false;
         }
+
 
         // Build
         List<String> commandLine = Lists.newArrayList(getDescriptor().xcodebuildPath(), "-alltargets", "-configuration", configuration);
@@ -71,7 +84,7 @@ public class XCodeBuilder extends Builder {
             commandLine.add("clean");
         }
         commandLine.add("build");
-        int returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(listener.getLogger()).pwd(build.getProject().getWorkspace()).join();
+        returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(listener).pwd(build.getProject().getWorkspace()).join();
 
         return returnCode==0;
     }
