@@ -1,20 +1,27 @@
 This is a very simple plugin for invoking xcode builds from Hudson CI (http://hudson-ci.org).  There are two builders provided, one for agvtool and one for xcodebuild.  This plugin was build against Hudson 1.343.
 
-agvtool Builder
----
 
-This builder allows the dynamic updating of the CFBundleVersion with the current build number and a pre-defined major/minor marketing version to produce a version number of the form MAJOR.MINOR.BUILD_NUMBER (e.g. 1.0.456)
-
-XCode Builder
----
-
-This invokes the actual build.  Currently it will invoke -alltargets.  The configuration (Debug, Release, etc) can be specified in the per-project config along with whether to perform a clean before the build phase.  
-
-
-GOTCHAS
--------
+Read this first
+---------------
 
 - Obviously, the build machine has to be an OSX machine with XCode developer tools installed
 - Certificates, Identities and Provisions must be installed on the build machine separately
-- When code-signing, a prompt may appear on the build machine asking whether   to allow keychain access.  This will block the build until it is   dismissed.  Just select 'Always Allow' the first time and it shouldnt need to ask again.
+- When code-signing, a prompt may appear on the build machine asking whether   to allow keychain access.  This will block the build until it is   dismissed.  Just select 'Always Allow' the first time and it shouldn't need to ask again.
 - Make sure you define the CFBundleShortVersionString in your Info.plist.  This will be used as the marketing version and will be prepended to the build number when using agvtool
+
+
+Description
+-----------
+
+This builder can invoke agvtoool to dynamically update the CFBundleVersion with the current build number prefixed with the current marketing version (as defined by CFBundleShortVersionString) to produce a version number of the form CFBundleShortVersionString.BUILD_NUMBER (e.g. 1.0.456)
+
+The builder can also invoke xcodebuild to build (or clean-build) the project.  Currently it is hardcoded to invoke -alltargets.  The configuration (Debug, Release, etc) can be specified in the per-project config along with whether to perform a clean before the build phase.  
+
+
+TODO
+----
+
+- Add .ipa packaging option
+- Check requested configuration against available configurations
+- Allow selection of targets
+- integrate unit testing
