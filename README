@@ -1,4 +1,4 @@
-This is a very simple plugin for invoking xcode builds from Hudson CI (http://hudson-ci.org).  There are two builders provided, one for agvtool and one for xcodebuild.  This plugin was build against Hudson 1.343.
+This is a very simple plugin for invoking xcode builds from Hudson CI (http://hudson-ci.org).  The builder wraps and provides limited functionality for agvtool and xcodebuild.  This plugin was build against Hudson 1.343.
 
 
 Read this first
