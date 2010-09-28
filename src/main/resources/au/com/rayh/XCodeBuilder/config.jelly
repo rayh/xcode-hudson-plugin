@@ -21,8 +21,8 @@
         <f:checkbox name="xcode.cleanBeforeBuild" checked="${instance.cleanBeforeBuild}" />
     </f:entry>
 
-<!--    <f:entry title="Build IPA?" field="buildIpa"
+    <f:entry title="Build IPA?" field="buildIpa"
       help="/plugin/xcodebuild-hudson-plugin/help-buildIpa.html">
         <f:checkbox name="xcode.buildIpa" checkbox="${instance.buildIpa}" />
-    </f:entry>-->
+    </f:entry>
 </j:jelly>

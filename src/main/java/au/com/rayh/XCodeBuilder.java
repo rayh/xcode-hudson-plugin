@@ -3,14 +3,16 @@ import com.google.common.collect.Lists;
 import hudson.EnvVars;
 import hudson.Launcher;
 import hudson.Extension;
+import hudson.FilePath;
 import hudson.util.FormValidation;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hudson.model.AbstractProject;
-import hudson.model.TaskListener;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileFilter;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -18,6 +20,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 import org.apache.commons.lang.StringUtils;
 
@@ -85,6 +88,27 @@ public class XCodeBuilder extends Builder {
         }
         commandLine.add("build");
         returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(listener).pwd(build.getProject().getWorkspace()).join();
+
+
+        // Package IPA
+        if(buildIpa) {
+            FilePath buildDir = build.getProject().getWorkspace().child("build").child(configuration + "-iphoneos");
+            List<FilePath> apps = buildDir.list(new AppFileFilter());
+
+            for(FilePath app : apps) {
+                FilePath ipaLocation = buildDir.child(app.getBaseName() + ".ipa");
+                ipaLocation.delete();
+
+                FilePath payload = buildDir.child("Payload");
+                payload.deleteRecursive();
+                payload.mkdirs();
+
+                app.copyRecursiveTo(payload.child(app.getName()));
+                payload.zip(ipaLocation.write());
+
+                payload.deleteRecursive();
+            }
+        }
 
         return returnCode==0;
     }
