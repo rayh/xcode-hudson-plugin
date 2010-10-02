@@ -11,8 +11,6 @@ import hudson.model.AbstractProject;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileFilter;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -20,14 +18,13 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 import org.apache.commons.lang.StringUtils;
 
 /**
  * @author Ray Hilton
  */
-public class XCodeBuilder extends Builder {
+public class XcodeBuilder extends Builder {
     private Boolean buildIpa;
     private Boolean cleanBeforeBuild;
     private Boolean updateBuildNumber;
@@ -35,7 +32,7 @@ public class XCodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration) {
+    public XcodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration) {
         this.buildIpa = buildIpa;
         this.cleanBeforeBuild = cleanBeforeBuild;
         this.updateBuildNumber = updateBuildNumber;
@@ -57,16 +54,16 @@ public class XCodeBuilder extends Builder {
     public Boolean getUpdateBuildNumber() {
         return updateBuildNumber;
     }
-    
+
     @Override
-    public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {        
+    public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         EnvVars envs = build.getEnvironment(listener);
 
         // XCode Version
         int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().xcodebuildPath(), "-version").stdout(listener).pwd(build.getProject().getWorkspace()).join();
         if(returnCode>0) return false;
 
-        
+
         // Set build number
         if(updateBuildNumber) {
             ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -82,12 +79,15 @@ public class XCodeBuilder extends Builder {
 
 
         // Build
+        XcodeBuildOutputParser reportGenerator = new XcodeBuildOutputParser(build.getProject().getWorkspace(), listener);
         List<String> commandLine = Lists.newArrayList(getDescriptor().xcodebuildPath(), "-alltargets", "-configuration", configuration);
         if (cleanBeforeBuild) {
             commandLine.add("clean");
         }
         commandLine.add("build");
-        returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(listener).pwd(build.getProject().getWorkspace()).join();
+        returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(build.getProject().getWorkspace()).join();
+        if(reportGenerator.getExitCode()!=0) return false;
+        if(returnCode>0) return false;
 
 
         // Package IPA
@@ -110,7 +110,7 @@ public class XCodeBuilder extends Builder {
             }
         }
 
-        return returnCode==0;
+        return true;
     }
 
     @Override

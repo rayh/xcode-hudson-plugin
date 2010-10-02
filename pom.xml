@@ -47,7 +47,7 @@
 
     <groupId>hudson.plugins.xcode</groupId>
     <artifactId>xcode</artifactId>
-    <version>0.1</version>
+    <version>0.1.1</version>
 		<name>XCode integration for Hudson CI</name>
     <packaging>hpi</packaging>
 
