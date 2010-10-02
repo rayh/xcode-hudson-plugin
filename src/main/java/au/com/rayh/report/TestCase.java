@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package au.com.rayh.report;
 
 import java.util.ArrayList;
@@ -13,16 +8,26 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
-@XmlType
+@XmlType(name="testcase")
 @XmlAccessorType(XmlAccessType.NONE)
 public class TestCase {
-    @XmlAttribute String classname;
-    @XmlAttribute String name;
-    @XmlAttribute float time;
-    @XmlElement(name="failure") List<TestFailure> failures = new ArrayList<TestFailure>();
+    @XmlAttribute
+    String classname;
+    
+    @XmlAttribute
+    String name;
+    
+    @XmlAttribute
+    float time;
+    
+    @XmlElement(name="failure")
+    List<TestFailure> failures = new ArrayList<TestFailure>();
 
-    public TestCase(String name) {
-        this.classname = name;
+    public TestCase() {
+    }
+
+    public TestCase(String classname, String name) {
+        this.classname = classname;
         this.name = name;
     }
 
@@ -32,6 +37,10 @@ public class TestCase {
 
     public void setTime(float time) {
         this.time = time;
+    }
+
+    public float getTime() {
+        return time;
     }
 
     public List<TestFailure> getFailures() {

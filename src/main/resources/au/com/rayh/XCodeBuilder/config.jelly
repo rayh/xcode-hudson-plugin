@@ -6,6 +6,16 @@
     See global.jelly for a general discussion about jelly script.
   -->
 
+    <f:entry title="Target" field="target"
+      help="/plugin/xcode/help-target.html">
+        <f:textbox name="xcode.target" value="${instance.target}" />
+    </f:entry>
+
+    <f:entry title="SDK" field="sdk"
+      help="/plugin/xcode/help-sdk.html">
+        <f:textbox name="xcode.sdk" value="${instance.sdk}" />
+    </f:entry>
+
     <f:entry title="Configuration" field="configuration"
       help="/plugin/xcode/help-configuration.html">
         <f:textbox name="xcode.configuration" value="${instance.configuration}" />

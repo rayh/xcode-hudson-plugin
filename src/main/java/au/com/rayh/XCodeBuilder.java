@@ -29,14 +29,26 @@ public class XCodeBuilder extends Builder {
     private Boolean cleanBeforeBuild;
     private Boolean updateBuildNumber;
     private String configuration = "Release";
+    private String target;
+    private String sdk;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration, String target, String sdk) {
         this.buildIpa = buildIpa;
+        this.sdk = sdk;
+        this.target = target;
         this.cleanBeforeBuild = cleanBeforeBuild;
         this.updateBuildNumber = updateBuildNumber;
         this.configuration = configuration;
+    }
+
+    public String getSdk() {
+        return sdk;
+    }
+
+    public String getTarget() {
+        return target;
     }
 
     public String getConfiguration() {
@@ -80,7 +92,22 @@ public class XCodeBuilder extends Builder {
 
         // Build
         XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(build.getProject().getWorkspace(), listener);
-        List<String> commandLine = Lists.newArrayList(getDescriptor().xcodebuildPath(), "-alltargets", "-configuration", configuration);
+        List<String> commandLine = Lists.newArrayList(getDescriptor().xcodebuildPath());
+        if(StringUtils.isEmpty(target)) {
+            commandLine.add("-alltargets");
+        } else {
+            commandLine.add("-target");
+            commandLine.add(target);
+        }
+        
+        if(!StringUtils.isEmpty(sdk)) {
+            commandLine.add("-sdk");
+            commandLine.add(sdk);
+        }
+
+        commandLine.add("-configuration");
+        commandLine.add(configuration);
+
         if (cleanBeforeBuild) {
             commandLine.add("clean");
         }

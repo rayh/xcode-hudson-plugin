@@ -9,12 +9,14 @@ import au.com.rayh.report.TestCase;
 import au.com.rayh.report.TestFailure;
 import au.com.rayh.report.TestSuite;
 import hudson.FilePath;
-import hudson.model.BuildListener;
+import hudson.model.TaskListener;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.text.DateFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.bind.JAXBContext;
@@ -26,23 +28,24 @@ import javax.xml.bind.Marshaller;
  * @author ray
  */
 public class XCodeBuildOutputParser {
+    private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
     private static Pattern START_SUITE = Pattern.compile("Test Suite '(\\S+)'.*started at\\s+(.*)");
     private static Pattern END_SUITE = Pattern.compile("Test Suite '(\\S+)'.*finished at\\s+(.*).");
     private static Pattern START_TESTCASE = Pattern.compile("Test Case '-\\[\\S+\\s+(\\S+)\\]' started.");
-    private static Pattern END_TESTCASE = Pattern.compile("Test Case '-\\[\\S+\\s+(\\S+)\\]' passed \\((.*) seconds\\)");
+    private static Pattern END_TESTCASE = Pattern.compile("Test Case '-\\[\\S+\\s+(\\S+)\\]' passed \\((.*) seconds\\).");
     private static Pattern ERROR_TESTCASE = Pattern.compile("(.*): error: -\\[(\\S+) (\\S+)\\] : (.*)");
-    private static Pattern FAILED_TESTCASE = Pattern.compile("Test Case '-\\[\\S+ (\\S+)\\]' failed \\((\\S+) seconds\\)");
+    private static Pattern FAILED_TESTCASE = Pattern.compile("Test Case '-\\[\\S+ (\\S+)\\]' failed \\((\\S+) seconds\\).");
     private static Pattern FAILED_WITH_EXIT_CODE = Pattern.compile("failed with exit code (\\d+)");
 
     FilePath testReportsDir;
     OutputStream captureOutputStream;
-    BuildListener buildListener;
+    TaskListener buildListener;
 
     int exitCode;
     TestSuite currentTestSuite;
     TestCase currentTestCase;
 
-    public XCodeBuildOutputParser(FilePath workspace, BuildListener buildListener) throws IOException, InterruptedException {
+    public XCodeBuildOutputParser(FilePath workspace, TaskListener buildListener) throws IOException, InterruptedException {
         this.buildListener = buildListener;
         this.captureOutputStream = new LineBasedFilterOutputStream();
 
@@ -57,19 +60,20 @@ public class XCodeBuildOutputParser {
             super(buildListener.getLogger());
         }
 
+        @Override
         public void write(int b) throws IOException {
+            super.write(b);
             if((char)b == '\n') {
                 try {
                     handleLine(buffer.toString());
                     buffer = new StringBuilder();
                 } catch(Exception e) {  // Very fugly
+                    buildListener.fatalError(e.getMessage(), e);
                     throw new IOException(e);
                 }
             } else {
                 buffer.append((char)b);
             }
-            
-            super.write(b);
         }
     }
 
@@ -96,7 +100,7 @@ public class XCodeBuildOutputParser {
 
     private void writeTestReport() throws IOException, InterruptedException, JAXBException {
         OutputStream testReportOutputStream = testReportsDir.child("TEST-" + currentTestSuite.getName() + ".xml").write();
-        JAXBContext jaxbContext = JAXBContext.newInstance(TestSuite.class, TestCase.class, TestFailure.class);
+        JAXBContext jaxbContext = JAXBContext.newInstance(TestSuite.class);
         Marshaller marshaller = jaxbContext.createMarshaller();
         marshaller.marshal(currentTestSuite, testReportOutputStream);
 
@@ -105,24 +109,24 @@ public class XCodeBuildOutputParser {
     protected void handleLine(String line) throws ParseException, IOException, InterruptedException, JAXBException {
         Matcher m = START_SUITE.matcher(line);
         if(m.matches()) {
-            currentTestSuite = new TestSuite("hostname", m.group(1), DateFormat.getInstance().parse(m.group(2)));
+            currentTestSuite = new TestSuite(InetAddress.getLocalHost().getHostName(), m.group(1), dateFormat.parse(m.group(2)));
             return;
         }
 
         m = END_SUITE.matcher(line);
         if(m.matches()) {
             requireTestSuite(m.group(1));
-            currentTestSuite.setEndTime(DateFormat.getInstance().parse(m.group(2)));
+            currentTestSuite.setEndTime(dateFormat.parse(m.group(2)));
 
             writeTestReport();
-            
+
             currentTestSuite = null;
             return;
         }
 
         m = START_TESTCASE.matcher(line);
         if(m.matches()) {
-            currentTestCase = new TestCase(m.group(1));
+            currentTestCase = new TestCase(currentTestSuite.getName(), m.group(1));
             return;
         }
 
@@ -133,7 +137,7 @@ public class XCodeBuildOutputParser {
 
             currentTestCase.setTime(Float.valueOf(m.group(2)));
             currentTestSuite.getTestCases().add(currentTestCase);
-            currentTestSuite.tests+=1;
+            currentTestSuite.addTest();
             currentTestCase = null;
             return;
         }
@@ -151,8 +155,6 @@ public class XCodeBuildOutputParser {
 
             TestFailure failure = new TestFailure(errorMessage, errorLocation);
             currentTestCase.getFailures().add(failure);
-            currentTestSuite.tests+=1;
-            currentTestSuite.errors+=1;
             return;
         } 
         
@@ -160,9 +162,11 @@ public class XCodeBuildOutputParser {
         if(m.matches()) {
             requireTestSuite();
             requireTestCase(m.group(1));
-            currentTestSuite.tests+=1;
-            currentTestSuite.failures+=1;
+            currentTestSuite.addTest();
+            currentTestSuite.addFailure();
             currentTestCase.setTime(Float.valueOf(m.group(2)));
+            currentTestSuite.getTestCases().add(currentTestCase);
+            currentTestCase = null;
             return;
         }
 
