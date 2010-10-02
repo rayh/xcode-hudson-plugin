@@ -25,7 +25,7 @@ import javax.xml.bind.Marshaller;
  *
  * @author ray
  */
-public class XcodeBuildOutputParser {
+public class XCodeBuildOutputParser {
     private static Pattern START_SUITE = Pattern.compile("Test Suite '(\\S+)'.*started at\\s+(.*)");
     private static Pattern END_SUITE = Pattern.compile("Test Suite '(\\S+)'.*finished at\\s+(.*).");
     private static Pattern START_TESTCASE = Pattern.compile("Test Case '-\\[\\S+\\s+(\\S+)\\]' started.");
@@ -42,7 +42,7 @@ public class XcodeBuildOutputParser {
     TestSuite currentTestSuite;
     TestCase currentTestCase;
 
-    public XcodeBuildOutputParser(FilePath workspace, BuildListener buildListener) throws IOException, InterruptedException {
+    public XCodeBuildOutputParser(FilePath workspace, BuildListener buildListener) throws IOException, InterruptedException {
         this.buildListener = buildListener;
         this.captureOutputStream = new LineBasedFilterOutputStream();
 

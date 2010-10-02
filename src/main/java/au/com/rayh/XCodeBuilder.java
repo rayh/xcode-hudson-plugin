@@ -24,7 +24,7 @@ import org.apache.commons.lang.StringUtils;
 /**
  * @author Ray Hilton
  */
-public class XcodeBuilder extends Builder {
+public class XCodeBuilder extends Builder {
     private Boolean buildIpa;
     private Boolean cleanBeforeBuild;
     private Boolean updateBuildNumber;
@@ -32,7 +32,7 @@ public class XcodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XcodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration) {
         this.buildIpa = buildIpa;
         this.cleanBeforeBuild = cleanBeforeBuild;
         this.updateBuildNumber = updateBuildNumber;
@@ -79,7 +79,7 @@ public class XcodeBuilder extends Builder {
 
 
         // Build
-        XcodeBuildOutputParser reportGenerator = new XcodeBuildOutputParser(build.getProject().getWorkspace(), listener);
+        XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(build.getProject().getWorkspace(), listener);
         List<String> commandLine = Lists.newArrayList(getDescriptor().xcodebuildPath(), "-alltargets", "-configuration", configuration);
         if (cleanBeforeBuild) {
             commandLine.add("clean");
