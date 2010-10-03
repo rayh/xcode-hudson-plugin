@@ -5,9 +5,6 @@
 
 package au.com.rayh;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import au.com.rayh.report.TestCase;
 import au.com.rayh.report.TestSuite;
 import java.io.File;
@@ -90,6 +87,7 @@ public class XCodeBuildOutputParserTest {
 
     @Test
     public void shouldParseStartTestCase() throws Exception {
+        parser.currentTestSuite = new TestSuite("host", "PisClientTestCase", new Date());
         String line = "Test Case '-[PisClientTestCase testThatFails]' started.";
         parser.handleLine(line);
         assertNotNull(parser.currentTestCase);
@@ -99,7 +97,7 @@ public class XCodeBuildOutputParserTest {
     @Test
     public void shouldAddErrorToTestCase() throws Exception {
         parser.currentTestSuite = new TestSuite("host", "PisClientTestCase", new Date());
-        parser.currentTestCase = new TestCase("testThatFails");
+        parser.currentTestCase = new TestCase("PisClientTestCase", "testThatFails");
         String line = "/Users/ray/Development/Projects/Java/xcodebuild-hudson-plugin/work/jobs/PBS Streamer/workspace/PisClientTestCase.m:21: error: -[PisClientTestCase testThatFails] : \"((nil) != nil)\" should be true. This always fails";
         parser.handleLine(line);
         assertEquals(1, parser.currentTestCase.getFailures().size());
@@ -110,7 +108,7 @@ public class XCodeBuildOutputParserTest {
     @Test
     public void shouldParsePassedTestCase() throws Exception {
         parser.currentTestSuite = new TestSuite("host", "PisClientTestCase", new Date());
-        parser.currentTestCase = new TestCase("testThatPasses");
+        parser.currentTestCase = new TestCase("PisClientTestCase","testThatPasses");
         String line = "Test Case '-[PisClientTestCase testThatPasses]' passed (1.234 seconds).";
         parser.handleLine(line);
         assertNull(parser.currentTestCase);
@@ -124,7 +122,7 @@ public class XCodeBuildOutputParserTest {
     @Test
     public void shouldParseFailedTestCase() throws Exception {
         parser.currentTestSuite = new TestSuite("host", "PisClientTestCase", new Date());
-        parser.currentTestCase = new TestCase("testThatFails");
+        parser.currentTestCase = new TestCase("PisClientTestCase","testThatFails");
         String line = "Test Case '-[PisClientTestCase testThatFails]' failed (1.234 seconds).";
         parser.handleLine(line);
         assertNull(parser.currentTestCase);
