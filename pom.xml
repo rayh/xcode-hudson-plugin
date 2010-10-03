@@ -47,8 +47,8 @@
 
     <groupId>hudson.plugins.xcode</groupId>
     <artifactId>xcode</artifactId>
-    <version>0.1.1</version>
-		<name>XCode integration for Hudson CI</name>
+    <version>0.1.2</version>
+    <name>XCode integration for Hudson CI</name>
     <packaging>hpi</packaging>
 
   <!-- get every artifact through maven.glassfish.org, which proxies all the artifacts that we need -->
