@@ -2,11 +2,11 @@
   <f:section title="XCode Builder">
         
     <f:entry title="xcodebuild executable path" field="xcodebuildPath">
-      <f:textbox name="xcode.xcodebuildPath" checked="${descriptor.xcodebuildPath()}" />
+      <f:textbox name="xcode.xcodebuildPath" value="${descriptor.xcodebuildPath()}" />
     </f:entry>
 
     <f:entry title="agvtool executable path" field="agvtoolPath">
-      <f:textbox name="xcode.agvtoolPath" checked="${descriptor.agvtoolPath()}" />
+      <f:textbox name="xcode.agvtoolPath" value="${descriptor.agvtoolPath()}" />
     </f:entry>
   </f:section>
 </j:jelly>
