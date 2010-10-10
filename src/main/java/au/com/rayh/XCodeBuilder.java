@@ -31,16 +31,21 @@ public class XCodeBuilder extends Builder {
     private String configuration = "Release";
     private String target;
     private String sdk;
+    private String xcodeProjectPath;
+    private String xcodeProjectFile;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration, String target, String sdk) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration, String target, String sdk,
+            String xcodeProjectPath, String xcodeProjectFile) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
         this.cleanBeforeBuild = cleanBeforeBuild;
         this.updateBuildNumber = updateBuildNumber;
         this.configuration = configuration;
+        this.xcodeProjectPath = xcodeProjectPath;
+        this.xcodeProjectFile = xcodeProjectFile;
     }
 
     public String getSdk() {
@@ -67,59 +72,108 @@ public class XCodeBuilder extends Builder {
         return updateBuildNumber;
     }
 
+    public String getXcodeProjectPath() {
+        return xcodeProjectPath;
+    }
+
+    public String getXcodeProjectFile() {
+        return xcodeProjectFile;
+    }
+
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         EnvVars envs = build.getEnvironment(listener);
+        FilePath projectRoot = build.getProject().getWorkspace();
+
+        // check that the configured tools exist
+        if(!new FilePath(projectRoot.getChannel(), getDescriptor().xcodebuildPath()).exists()) {
+            listener.fatalError("Cannot find xcodebuild with the configured path {0}", getDescriptor().xcodebuildPath());
+        }
+        if(!new FilePath(projectRoot.getChannel(), getDescriptor().agvtoolPath()).exists()) {
+            listener.fatalError("Cannot find agvtool with the configured path {0}", getDescriptor().agvtoolPath());
+        }
+
+        // Set the working directory
+        if(!StringUtils.isEmpty(xcodeProjectPath)) {
+            projectRoot = projectRoot.child(xcodeProjectPath);
+        }
+        listener.getLogger().println("Working directory is " + projectRoot);
 
         // XCode Version
-        int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().xcodebuildPath(), "-version").stdout(listener).pwd(build.getProject().getWorkspace()).join();
+        int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().xcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
         if(returnCode>0) return false;
 
+        // Unlock keychain
+//        if(!StringUtils.isEmpty(keychainPassword)) {
+//            launcher.launch().envs(envs).cmds("security", "unlock-keychain", "-p", keychainPassword);
+//        }
 
         // Set build number
         if(updateBuildNumber) {
+            listener.getLogger().println("Updating version number");
             ByteArrayOutputStream output = new ByteArrayOutputStream();
-            returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(build.getProject().getWorkspace()).join();
+            returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
             if(returnCode>0) return false;
             String marketingVersionNumber = output.toString().trim();
             String newVersion = marketingVersionNumber + "." + build.getNumber();
             listener.getLogger().println("CFBundlerShortVersionString is " + marketingVersionNumber + " so new CFBundleVersion will be " + newVersion);
 
-            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", newVersion ).stdout(listener).pwd(build.getProject().getWorkspace()).join();
+            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", newVersion ).stdout(listener).pwd(projectRoot).join();
             if(returnCode>0) return false;
         }
 
 
         // Build
-        XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(build.getProject().getWorkspace(), listener);
+        StringBuilder xcodeReport = new StringBuilder("Going to invoke xcodebuild: ");
+        XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(projectRoot, listener);
         List<String> commandLine = Lists.newArrayList(getDescriptor().xcodebuildPath());
         if(StringUtils.isEmpty(target)) {
             commandLine.add("-alltargets");
+            xcodeReport.append("target: ALL");
         } else {
             commandLine.add("-target");
             commandLine.add(target);
+            xcodeReport.append("target: ").append(target);
         }
         
         if(!StringUtils.isEmpty(sdk)) {
             commandLine.add("-sdk");
             commandLine.add(sdk);
+            xcodeReport.append(", sdk: ").append(sdk);
+        } else {
+            xcodeReport.append(", sdk: DEFAULT");
+        }
+
+        if(!StringUtils.isEmpty(xcodeProjectFile)) {
+            commandLine.add("-project");
+            commandLine.add(xcodeProjectFile);
+            xcodeReport.append(", project: ").append(xcodeProjectFile);
+        } else {
+            xcodeReport.append(", project: DEFAULT");
         }
 
         commandLine.add("-configuration");
         commandLine.add(configuration);
+        xcodeReport.append(", configuration: ").append(configuration);
 
         if (cleanBeforeBuild) {
             commandLine.add("clean");
+            xcodeReport.append(", clean: YES");
+        } else {
+            xcodeReport.append(", clean: NO");
         }
         commandLine.add("build");
-        returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(build.getProject().getWorkspace()).join();
+        
+        listener.getLogger().println(xcodeReport.toString());
+        returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();
         if(reportGenerator.getExitCode()!=0) return false;
         if(returnCode>0) return false;
 
 
         // Package IPA
         if(buildIpa) {
-            FilePath buildDir = build.getProject().getWorkspace().child("build").child(configuration + "-iphoneos");
+            listener.getLogger().println("Packaging IPA");
+            FilePath buildDir = projectRoot.child("build").child(configuration + "-iphoneos");
             List<FilePath> apps = buildDir.list(new AppFileFilter());
 
             for(FilePath app : apps) {
@@ -129,6 +183,8 @@ public class XCodeBuilder extends Builder {
                 FilePath payload = buildDir.child("Payload");
                 payload.deleteRecursive();
                 payload.mkdirs();
+
+                listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + app.getBaseName() + ".ipa");
 
                 app.copyRecursiveTo(payload.child(app.getName()));
                 payload.zip(ipaLocation.write());
