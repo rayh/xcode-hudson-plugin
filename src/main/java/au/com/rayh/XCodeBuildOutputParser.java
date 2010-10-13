@@ -115,9 +115,9 @@ public class XCodeBuildOutputParser {
 
         m = END_SUITE.matcher(line);
         if(m.matches()) {
-            requireTestSuite(m.group(1));
-            currentTestSuite.setEndTime(dateFormat.parse(m.group(2)));
+            if(currentTestSuite==null) return; // if there is no current suite, do nothing
 
+            currentTestSuite.setEndTime(dateFormat.parse(m.group(2)));
             writeTestReport();
 
             currentTestSuite = null;
