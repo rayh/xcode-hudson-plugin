@@ -109,17 +109,33 @@ public class XCodeBuilder extends Builder {
 //        }
 
         // Set build number
+//        String artifactVersion = "SNAPSHOT";
         if(updateBuildNumber) {
-            listener.getLogger().println("Updating version number");
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
-            if(returnCode>0) return false;
-            String marketingVersionNumber = output.toString().trim();
-            String newVersion = marketingVersionNumber + "." + build.getNumber();
-            listener.getLogger().println("CFBundlerShortVersionString is " + marketingVersionNumber + " so new CFBundleVersion will be " + newVersion);
+            listener.getLogger().println("Updating version number (CFBundleVersion) to build number " + build.getNumber());
+            //ByteArrayOutputStream output = new ByteArrayOutputStream();
+            //returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
+            //if(returnCode>0) {
+                String artifactVersion = String.valueOf(build.getNumber());
+                listener.getLogger().println("Could not get CFBundleShortVersionString so new CFBundleVersion will be " + artifactVersion);
 
-            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", newVersion ).stdout(listener).pwd(projectRoot).join();
-            if(returnCode>0) return false;
+            //} else {
+            //    String marketingVersionNumber = output.toString().trim();
+            //    artifactVersion = marketingVersionNumber + "." + build.getNumber();
+            //    listener.getLogger().println("CFBundleShortVersionString is " + marketingVersionNumber + " so new CFBundleVersion will be " + artifactVersion);
+            //}
+
+            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", artifactVersion ).stdout(listener).pwd(projectRoot).join();
+            if(returnCode>0) {
+                listener.fatalError("Could not set the CFBundleVersion to " + artifactVersion);
+            }
+//        } else {
+//            listener.getLogger().println("Fetching marketing version number (CFBundleShortVersionString)");
+//            ByteArrayOutputStream output = new ByteArrayOutputStream();
+//            returnCode = launcher.launch().envs(envs).cmds("agvtool", "vers", "-terse").stdout(output).pwd(projectRoot).join();
+//
+//            // only use this version number if we found it
+//            if(returnCode==0)
+//                artifactVersion = output.toString().trim();
         }
 
 
@@ -177,14 +193,14 @@ public class XCodeBuilder extends Builder {
             List<FilePath> apps = buildDir.list(new AppFileFilter());
 
             for(FilePath app : apps) {
-                FilePath ipaLocation = buildDir.child(app.getBaseName() + ".ipa");
+                FilePath ipaLocation = buildDir.child(app.getBaseName() + "-" + build.getNumber() + ".ipa");
                 ipaLocation.delete();
 
                 FilePath payload = buildDir.child("Payload");
                 payload.deleteRecursive();
                 payload.mkdirs();
 
-                listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + app.getBaseName() + ".ipa");
+                listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation);
 
                 app.copyRecursiveTo(payload.child(app.getName()));
                 payload.zip(ipaLocation.write());
