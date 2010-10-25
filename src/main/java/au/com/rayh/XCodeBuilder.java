@@ -98,6 +98,7 @@ public class XCodeBuilder extends Builder {
             projectRoot = projectRoot.child(xcodeProjectPath);
         }
         listener.getLogger().println("Working directory is " + projectRoot);
+        FilePath buildDirectory = projectRoot.child("build").child(configuration + "-iphoneos");
 
         // XCode Version
         int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().xcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
@@ -115,8 +116,7 @@ public class XCodeBuilder extends Builder {
             //ByteArrayOutputStream output = new ByteArrayOutputStream();
             //returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
             //if(returnCode>0) {
-                String artifactVersion = String.valueOf(build.getNumber());
-                listener.getLogger().println("Could not get CFBundleShortVersionString so new CFBundleVersion will be " + artifactVersion);
+            String artifactVersion = String.valueOf(build.getNumber());
 
             //} else {
             //    String marketingVersionNumber = output.toString().trim();
@@ -138,6 +138,15 @@ public class XCodeBuilder extends Builder {
 //                artifactVersion = output.toString().trim();
         }
 
+        // Clean build directories
+        if(cleanBeforeBuild) {
+            listener.getLogger().println("Cleaning build directory (" + projectRoot.child("build") + ")");
+            buildDirectory.deleteRecursive();
+        }
+        
+        // remove test-reports and *.ipa
+        listener.getLogger().println("Cleaning up test-reports");
+        projectRoot.child("test-reports").deleteRecursive();
 
         // Build
         StringBuilder xcodeReport = new StringBuilder("Going to invoke xcodebuild: ");
@@ -172,12 +181,12 @@ public class XCodeBuilder extends Builder {
         commandLine.add(configuration);
         xcodeReport.append(", configuration: ").append(configuration);
 
-        if (cleanBeforeBuild) {
-            commandLine.add("clean");
-            xcodeReport.append(", clean: YES");
-        } else {
-            xcodeReport.append(", clean: NO");
-        }
+//        if (cleanBeforeBuild) {
+//            commandLine.add("clean");
+//            xcodeReport.append(", clean: YES");
+//        } else {
+//            xcodeReport.append(", clean: NO");
+//        }
         commandLine.add("build");
         
         listener.getLogger().println(xcodeReport.toString());
@@ -188,15 +197,18 @@ public class XCodeBuilder extends Builder {
 
         // Package IPA
         if(buildIpa) {
+            listener.getLogger().println("Cleaning up previously generate .ipa files");
+            for(FilePath path : buildDirectory.list("*.ipa")) {
+                path.delete();
+            }
+
             listener.getLogger().println("Packaging IPA");
-            FilePath buildDir = projectRoot.child("build").child(configuration + "-iphoneos");
-            List<FilePath> apps = buildDir.list(new AppFileFilter());
+            List<FilePath> apps = buildDirectory.list(new AppFileFilter());
 
             for(FilePath app : apps) {
-                FilePath ipaLocation = buildDir.child(app.getBaseName() + "-" + build.getNumber() + ".ipa");
-                ipaLocation.delete();
+                FilePath ipaLocation = buildDirectory.child(app.getBaseName() + "-(" + build.getProject().getName() + ")-" + build.getNumber() + ".ipa");
 
-                FilePath payload = buildDir.child("Payload");
+                FilePath payload = buildDirectory.child("Payload");
                 payload.deleteRecursive();
                 payload.mkdirs();
 
@@ -204,6 +216,10 @@ public class XCodeBuilder extends Builder {
 
                 app.copyRecursiveTo(payload.child(app.getName()));
                 payload.zip(ipaLocation.write());
+
+
+                listener.getLogger().println("Copying to " + app.getBaseName() + ".ipa");
+                ipaLocation.copyTo(buildDirectory.child(app.getBaseName() + ".ipa"));
 
                 payload.deleteRecursive();
             }

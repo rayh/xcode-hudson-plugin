@@ -35,7 +35,7 @@
         <f:textbox name="xcode.xcodeProjectFile" value="${instance.xcodeProjectFile}" />
     </f:entry>
    
-    <f:entry title="Update version with build number?" field="updateBuildNumber"
+    <f:entry title="Update CFBundleVersion with build number?" field="updateBuildNumber"
       help="/plugin/xcode/help-updateBuildNumber.html">
         <f:checkbox name="xcode.updateBuildNumber" checked="${instance.updateBuildNumber}" />
     </f:entry>
