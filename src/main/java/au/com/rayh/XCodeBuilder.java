@@ -206,7 +206,7 @@ public class XCodeBuilder extends Builder {
             List<FilePath> apps = buildDirectory.list(new AppFileFilter());
 
             for(FilePath app : apps) {
-                FilePath ipaLocation = buildDirectory.child(app.getBaseName() + "-(" + build.getProject().getName() + ")-" + build.getNumber() + ".ipa");
+                FilePath ipaLocation = buildDirectory.child(app.getBaseName() + "-" + configuration + "-" + build.getNumber() + ".ipa");
 
                 FilePath payload = buildDirectory.child("Payload");
                 payload.deleteRecursive();
