@@ -214,12 +214,26 @@ public class XCodeBuilder extends Builder {
 
                 listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation);
 
-                app.copyRecursiveTo(payload.child(app.getName()));
-                payload.zip(ipaLocation.write());
+                // Dont use hudson to process the IPA as it fails to work
+                // see https://github.com/rayh/xcode-hudson-plugin/issues#issue/4
+                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("cp", "-Rp", app.getName(), "Payload/").join();
+                if(returnCode>0) {
+                    listener.getLogger().println("Failed to copy " + app.getName() + " to Payload/ directory");
+                    continue;
+                }
 
+                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("zip", "-r", "-T", "-y", ipaLocation.getName(), "Payload").join();
+                if(returnCode>0) {
+                    listener.getLogger().println("Failed to zip Payload/ into " + ipaLocation.getName());
+                    continue;
+                }
 
-                listener.getLogger().println("Copying to " + app.getBaseName() + ".ipa");
-                ipaLocation.copyTo(buildDirectory.child(app.getBaseName() + ".ipa"));
+                // also zip up the symbols, if present
+                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("zip", "-r", "-T", "-y", app.getBaseName() + "-Symbols.zip", "*.dSYM").join();
+                if(returnCode>0) {
+                    listener.getLogger().println("Failed to zip *.dSYM into " + app.getBaseName() + "-Symbols.zip");
+                    continue;
+                }
 
                 payload.deleteRecursive();
             }
