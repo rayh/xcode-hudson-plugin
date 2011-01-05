@@ -39,6 +39,12 @@
       help="/plugin/xcode/help-updateBuildNumber.html">
         <f:checkbox name="xcode.updateBuildNumber" checked="${instance.updateBuildNumber}" />
     </f:entry>
+    
+	<f:entry title="New Marketing number" field="overrideMarketingNumber"
+	  description="Leave blank to use projects marketing number."
+	  help="/plugin/xcode/help-updateMarketingNumber.html">
+	  <f:textbox name="xcode.overrideMarketingNumber" value="${instance.overrideMarketingNumber}" />
+	</f:entry>
 
     <f:entry title="Clean before build?" field="cleanBeforeBuild"
       help="/plugin/xcode/help-cleanBeforeBuild.html">
