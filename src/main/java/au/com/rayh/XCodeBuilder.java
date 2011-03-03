@@ -206,11 +206,16 @@ public class XCodeBuilder extends Builder {
             List<FilePath> apps = buildDirectory.list(new AppFileFilter());
 
             for(FilePath app : apps) {
-                FilePath ipaLocation = buildDirectory.child(app.getBaseName() + "-" + configuration + "-" + build.getNumber() + ".ipa");
+                String baseName = app.getBaseName() + "-" + configuration + "-" + build.getProject().getName() + "-" + build.getNumber();
+                FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
 
                 FilePath payload = buildDirectory.child("Payload");
                 payload.deleteRecursive();
                 payload.mkdirs();
+
+                FilePath dotapp = payload.child(".app");
+                dotapp.mkdirs();
+           
 
                 listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation);
 
@@ -229,11 +234,15 @@ public class XCodeBuilder extends Builder {
                 }
 
                 // also zip up the symbols, if present
-                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("zip", "-r", "-T", "-y", app.getBaseName() + "-Symbols.zip", "*.dSYM").join();
+                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("zip", "-r", "-T", "-y", baseName + "-dSYM.zip", "*.dSYM").join();
                 if(returnCode>0) {
-                    listener.getLogger().println("Failed to zip *.dSYM into " + app.getBaseName() + "-Symbols.zip");
+                    listener.getLogger().println("Failed to zip *.dSYM into " + baseName + "-dSYM.zip");
                     continue;
                 }
+
+                //listener.getLogger().println("Copying to " + app.getBaseName() + ".ipa");
+                //ipaLocation.copyTo(buildDirectory.child(app.getBaseName() + ".ipa"));
+
 
                 payload.deleteRecursive();
             }
