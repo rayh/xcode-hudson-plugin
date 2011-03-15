@@ -20,7 +20,7 @@
 
     <f:entry title="Configuration" field="configuration"
       help="/plugin/xcode/help-configuration.html">
-        <f:textbox name="xcode.configuration" value="${instance.configuration}" />
+        <f:textbox name="xcode.configuration" value="${instance.configuration}" default="Release"/>
     </f:entry>
 
     <f:entry title="Xcode Project Directory" field="xcodeProjectPath"
@@ -38,6 +38,12 @@
     <f:entry title="Update CFBundleVersion with build number?" field="updateBuildNumber"
       help="/plugin/xcode/help-updateBuildNumber.html">
         <f:checkbox name="xcode.updateBuildNumber" checked="${instance.updateBuildNumber}" />
+    </f:entry>
+
+    <f:entry title="CFBundleVersion pattern" field="versionNumberPattern"
+      description="The pattern for settings the CFBundleVersion.  The value {BUILD_NUMBER} will be replaced with the current build number"
+      help="/plugin/xcode/help-versionNumberPattern.html">
+        <f:textbox name="xcode.versionNumberPattern" value="${instance.versionNumberPattern}" default="{BUILD_NUMBER}"/>
     </f:entry>
 
     <f:entry title="Clean before build?" field="cleanBeforeBuild"

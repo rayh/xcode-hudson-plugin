@@ -28,16 +28,18 @@ public class XCodeBuilder extends Builder {
     private Boolean buildIpa;
     private Boolean cleanBeforeBuild;
     private Boolean updateBuildNumber;
-    private String configuration = "Release";
+    private String configuration;
     private String target;
     private String sdk;
     private String xcodeProjectPath;
     private String xcodeProjectFile;
+    private String embeddedProfileFile;
+    private String versionNumberPattern;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
     public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration, String target, String sdk,
-            String xcodeProjectPath, String xcodeProjectFile) {
+            String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String versionNumberPattern) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -46,8 +48,13 @@ public class XCodeBuilder extends Builder {
         this.configuration = configuration;
         this.xcodeProjectPath = xcodeProjectPath;
         this.xcodeProjectFile = xcodeProjectFile;
+        this.embeddedProfileFile = embeddedProfileFile;
+        this.versionNumberPattern = versionNumberPattern;
     }
 
+    public String getVersionNumberPattern() {
+        return versionNumberPattern;
+    }
     public String getSdk() {
         return sdk;
     }
@@ -80,6 +87,10 @@ public class XCodeBuilder extends Builder {
         return xcodeProjectFile;
     }
 
+    public String getEmbeddedProfileFile() {
+        return embeddedProfileFile;
+    }
+
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         EnvVars envs = build.getEnvironment(listener);
@@ -110,13 +121,17 @@ public class XCodeBuilder extends Builder {
 //        }
 
         // Set build number
-//        String artifactVersion = "SNAPSHOT";
+        String artifactVersion = String.valueOf(build.getNumber());
+        String versionNumber = artifactVersion;
+        if(!StringUtils.isEmpty(getVersionNumberPattern())) {
+             versionNumber = getVersionNumberPattern().replaceAll("\\{BUILD_NUMBER\\}", artifactVersion);
+        }
+        
         if(updateBuildNumber) {
-            listener.getLogger().println("Updating version number (CFBundleVersion) to build number " + build.getNumber());
+            listener.getLogger().println("Updating version number (CFBundleVersion) to " + versionNumber);
             //ByteArrayOutputStream output = new ByteArrayOutputStream();
             //returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
             //if(returnCode>0) {
-            String artifactVersion = String.valueOf(build.getNumber());
 
             //} else {
             //    String marketingVersionNumber = output.toString().trim();
@@ -124,9 +139,9 @@ public class XCodeBuilder extends Builder {
             //    listener.getLogger().println("CFBundleShortVersionString is " + marketingVersionNumber + " so new CFBundleVersion will be " + artifactVersion);
             //}
 
-            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", artifactVersion ).stdout(listener).pwd(projectRoot).join();
+            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", versionNumber ).stdout(listener).pwd(projectRoot).join();
             if(returnCode>0) {
-                listener.fatalError("Could not set the CFBundleVersion to " + artifactVersion);
+                listener.fatalError("Could not set the CFBundleVersion to " + versionNumber);
             }
 //        } else {
 //            listener.getLogger().println("Fetching marketing version number (CFBundleShortVersionString)");
@@ -206,15 +221,12 @@ public class XCodeBuilder extends Builder {
             List<FilePath> apps = buildDirectory.list(new AppFileFilter());
 
             for(FilePath app : apps) {
-                String baseName = app.getBaseName() + "-" + configuration + "-" + build.getProject().getName() + "-" + build.getNumber();
+                String baseName = app.getBaseName() + "-" + configuration + "-" + build.getProject().getName() + "-" + versionNumber;
                 FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
 
                 FilePath payload = buildDirectory.child("Payload");
                 payload.deleteRecursive();
                 payload.mkdirs();
-
-                FilePath dotapp = payload.child(".app");
-                dotapp.mkdirs();
            
 
                 listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation);
