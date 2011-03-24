@@ -10,7 +10,6 @@ import hudson.model.BuildListener;
 import hudson.model.AbstractProject;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
-import java.io.ByteArrayOutputStream;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -18,6 +17,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang.StringUtils;
 
@@ -230,18 +230,24 @@ public class XCodeBuilder extends Builder {
            
 
                 listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation);
+                List<String> packageCommandLine = new ArrayList<String>();
+                packageCommandLine.add("/usr/bin/xcrun");
+                packageCommandLine.add("-sdk");
 
-                // Dont use hudson to process the IPA as it fails to work
-                // see https://github.com/rayh/xcode-hudson-plugin/issues#issue/4
-                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("cp", "-Rp", app.getName(), "Payload/").join();
-                if(returnCode>0) {
-                    listener.getLogger().println("Failed to copy " + app.getName() + " to Payload/ directory");
-                    continue;
+                if(!StringUtils.isEmpty(sdk)) {
+                    packageCommandLine.add(sdk);
+                } else {
+                    packageCommandLine.add("iphoneos");
                 }
-
-                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("zip", "-r", "-T", "-y", ipaLocation.getName(), "Payload").join();
+                packageCommandLine.addAll(Lists.newArrayList("PackageApplication", "-v", app.toString(), "-o", ipaLocation.toString()));
+                if(!StringUtils.isEmpty(embeddedProfileFile)) {
+                    packageCommandLine.add("--embed");
+                    packageCommandLine.add(embeddedProfileFile);
+                }
+                
+                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(projectRoot).cmds(packageCommandLine).join();
                 if(returnCode>0) {
-                    listener.getLogger().println("Failed to zip Payload/ into " + ipaLocation.getName());
+                    listener.getLogger().println("Failed to build " + ipaLocation.getName());
                     continue;
                 }
 

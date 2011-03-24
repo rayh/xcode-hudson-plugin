@@ -55,4 +55,10 @@
       help="/plugin/xcode/help-buildIpa.html">
         <f:checkbox name="xcode.buildIpa" checkbox="${instance.buildIpa}" />
     </f:entry>
+
+    <f:entry title="Embedded Profile" field="embeddedProfileFile"
+      description="The relative path to the mobileprovision to embed, leave blank for no embedded profile"
+      help="/plugin/xcode/help-embeddedProfileFile.html">
+        <f:checkbox name="xcode.embeddedProfileFile" checkbox="${instance.embeddedProfileFile}" />
+    </f:entry>
 </j:jelly>
