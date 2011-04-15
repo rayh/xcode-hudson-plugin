@@ -29,6 +29,7 @@ public class XCodeBuilder extends Builder {
     private Boolean cleanBeforeBuild;
     private Boolean updateBuildNumber;
     private String configuration;
+    private String overrideMarketingNumber;
     private String target;
     private String sdk;
     private String xcodeProjectPath;
@@ -38,13 +39,13 @@ public class XCodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration, String target, String sdk,
-            String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String versionNumberPattern) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String versionNumberPattern, String overrideMarketingNumber) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
         this.cleanBeforeBuild = cleanBeforeBuild;
         this.updateBuildNumber = updateBuildNumber;
+        this.overrideMarketingNumber = overrideMarketingNumber;
         this.configuration = configuration;
         this.xcodeProjectPath = xcodeProjectPath;
         this.xcodeProjectFile = xcodeProjectFile;
@@ -77,6 +78,10 @@ public class XCodeBuilder extends Builder {
 
     public Boolean getUpdateBuildNumber() {
         return updateBuildNumber;
+    }
+
+    public String getOverrideMarketingNumber() {
+        return overrideMarketingNumber;
     }
 
     public String getXcodeProjectPath() {
@@ -151,6 +156,15 @@ public class XCodeBuilder extends Builder {
 //            // only use this version number if we found it
 //            if(returnCode==0)
 //                artifactVersion = output.toString().trim();
+        }
+        
+        if( false == StringUtils.isEmpty(overrideMarketingNumber) ) {
+            listener.getLogger().println("Updating marketing version to " + overrideMarketingNumber);
+            
+            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-marketing-version", overrideMarketingNumber ).stdout(listener).pwd(projectRoot).join();
+            if(returnCode>0) {
+                listener.fatalError("Could not set marketing version to " + overrideMarketingNumber);
+            }
         }
 
         // Clean build directories
