@@ -59,6 +59,6 @@
     <f:entry title="Embedded Profile" field="embeddedProfileFile"
       description="The relative path to the mobileprovision to embed, leave blank for no embedded profile"
       help="/plugin/xcode/help-embeddedProfileFile.html">
-        <f:checkbox name="xcode.embeddedProfileFile" checkbox="${instance.embeddedProfileFile}" />
+        <f:textbox name="xcode.embeddedProfileFile" checkbox="${instance.embeddedProfileFile}" />
     </f:entry>
 </j:jelly>
