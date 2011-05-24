@@ -30,27 +30,33 @@ public class XCodeBuilder extends Builder {
     private Boolean updateBuildNumber;
     private String configuration;
     private String overrideMarketingNumber;
-    private String target;
+    //private String target;
     private String sdk;
     private String xcodeProjectPath;
-    private String xcodeProjectFile;
+    //private String xcodeProjectFile;
     private String embeddedProfileFile;
     private String versionNumberPattern;
+    private String workspaceName;
+    private String schemeName;
+    private String buildAction;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String versionNumberPattern, String overrideMarketingNumber) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration, String sdk, String xcodeProjectPath, String embeddedProfileFile, String versionNumberPattern, String overrideMarketingNumber, String workspaceName, String schemeName, String buildAction) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
-        this.target = target;
+        //this.target = target;
         this.cleanBeforeBuild = cleanBeforeBuild;
         this.updateBuildNumber = updateBuildNumber;
         this.overrideMarketingNumber = overrideMarketingNumber;
         this.configuration = configuration;
         this.xcodeProjectPath = xcodeProjectPath;
-        this.xcodeProjectFile = xcodeProjectFile;
+        //this.xcodeProjectFile = xcodeProjectFile;
         this.embeddedProfileFile = embeddedProfileFile;
         this.versionNumberPattern = versionNumberPattern;
+        this.workspaceName = workspaceName;
+    	this.schemeName = schemeName;
+    	this.buildAction = buildAction;
     }
 
     public String getVersionNumberPattern() {
@@ -60,9 +66,9 @@ public class XCodeBuilder extends Builder {
         return sdk;
     }
 
-    public String getTarget() {
-        return target;
-    }
+    //public String getTarget() {
+    //    return target;
+    //}
 
     public String getConfiguration() {
         return configuration;
@@ -88,12 +94,24 @@ public class XCodeBuilder extends Builder {
         return xcodeProjectPath;
     }
 
-    public String getXcodeProjectFile() {
-        return xcodeProjectFile;
-    }
+    //public String getXcodeProjectFile() {
+    //    return xcodeProjectFile;
+    //}
 
     public String getEmbeddedProfileFile() {
         return embeddedProfileFile;
+    }
+
+    public String getWorkspaceName() {
+        return workspaceName;
+    }
+
+    public String getSchemeName() {
+        return schemeName;
+    }
+
+    public String getBuildAction() {
+        return buildAction;
     }
 
     @Override
@@ -181,6 +199,8 @@ public class XCodeBuilder extends Builder {
         StringBuilder xcodeReport = new StringBuilder("Going to invoke xcodebuild: ");
         XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(projectRoot, listener);
         List<String> commandLine = Lists.newArrayList(getDescriptor().xcodebuildPath());
+        
+        /*
         if(StringUtils.isEmpty(target)) {
             commandLine.add("-alltargets");
             xcodeReport.append("target: ALL");
@@ -189,6 +209,15 @@ public class XCodeBuilder extends Builder {
             commandLine.add(target);
             xcodeReport.append("target: ").append(target);
         }
+        */
+        
+        commandLine.add("-workspace");
+		commandLine.add(workspaceName);
+		xcodeReport.append(", workspace: ").append(workspaceName);
+        
+        commandLine.add("-scheme");
+		commandLine.add(schemeName);
+		xcodeReport.append(", scheme: ").append(schemeName);
         
         if(!StringUtils.isEmpty(sdk)) {
             commandLine.add("-sdk");
@@ -198,13 +227,14 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append(", sdk: DEFAULT");
         }
 
+		/*
         if(!StringUtils.isEmpty(xcodeProjectFile)) {
             commandLine.add("-project");
             commandLine.add(xcodeProjectFile);
             xcodeReport.append(", project: ").append(xcodeProjectFile);
         } else {
             xcodeReport.append(", project: DEFAULT");
-        }
+        }*/
 
         commandLine.add("-configuration");
         commandLine.add(configuration);
@@ -216,7 +246,10 @@ public class XCodeBuilder extends Builder {
 //        } else {
 //            xcodeReport.append(", clean: NO");
 //        }
-        commandLine.add("build");
+        //commandLine.add("build");
+        
+		commandLine.add(buildAction);
+		xcodeReport.append("buildAction: ").append(buildAction);
         
         listener.getLogger().println(xcodeReport.toString());
         returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();
