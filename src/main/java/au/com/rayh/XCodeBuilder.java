@@ -266,7 +266,7 @@ public class XCodeBuilder extends Builder {
                 }
 
                 // also zip up the symbols, if present
-                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("zip", "-r", "-T", "-y", baseName + "-dSYM.zip", "*.dSYM").join();
+                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("zip", "-r", "-T", "-y", baseName + "-dSYM.zip", app.getBaseName() + ".app.dSYM").join();
                 if(returnCode>0) {
                     listener.getLogger().println("Failed to zip *.dSYM into " + baseName + "-dSYM.zip");
                     continue;
