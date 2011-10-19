@@ -47,9 +47,9 @@
 	</f:entry>
 
     <f:entry title="CFBundleVersion pattern" field="versionNumberPattern"
-      description="The pattern for settings the CFBundleVersion.  The value {BUILD_NUMBER} will be replaced with the current build number"
+      description="The pattern for settings the CFBundleVersion.  The value ${BUILD_NUMBER} will be replaced with the current build number"
       help="/plugin/xcode/help-versionNumberPattern.html">
-        <f:textbox name="xcode.versionNumberPattern" value="${instance.versionNumberPattern}" default="{BUILD_NUMBER}"/>
+        <f:textbox name="xcode.versionNumberPattern" value="${instance.versionNumberPattern}" default="${BUILD_NUMBER}"/>
     </f:entry>
 
     <f:entry title="Clean before build?" field="cleanBeforeBuild"

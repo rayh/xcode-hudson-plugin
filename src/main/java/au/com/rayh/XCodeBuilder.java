@@ -129,7 +129,7 @@ public class XCodeBuilder extends Builder {
         String artifactVersion = String.valueOf(build.getNumber());
         String versionNumber = artifactVersion;
         if(!StringUtils.isEmpty(getVersionNumberPattern())) {
-             versionNumber = getVersionNumberPattern().replaceAll("\\{BUILD_NUMBER\\}", artifactVersion);
+             versionNumber = getVersionNumberPattern().replaceAll("\\$\\{BUILD_NUMBER\\}", artifactVersion);
         }
         
         if(updateBuildNumber) {
