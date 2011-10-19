@@ -5,20 +5,27 @@
 
 package au.com.rayh;
 
-import au.com.rayh.report.TestCase;
-import au.com.rayh.report.TestSuite;
-import java.io.File;
 import hudson.FilePath;
+import hudson.console.ConsoleNote;
 import hudson.model.TaskListener;
+
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Date;
+
+
+import au.com.rayh.report.TestCase;
+import au.com.rayh.report.TestSuite;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  *
@@ -38,6 +45,15 @@ public class XCodeBuildOutputParserTest {
                     throw new RuntimeException(e);
                 }
             }
+
+            public void annotate(ConsoleNote consoleNote) throws IOException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void hyperlink(String s, String s1) throws IOException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
             public PrintWriter error(String string) {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
@@ -114,7 +130,7 @@ public class XCodeBuildOutputParserTest {
         assertNull(parser.currentTestCase);
         assertEquals(1, parser.currentTestSuite.getTestCases().size());
         assertEquals("testThatPasses", parser.currentTestSuite.getTestCases().get(0).getName());
-        assertEquals(1.234, parser.currentTestSuite.getTestCases().get(0).getTime());
+        assertEquals(1.234, parser.currentTestSuite.getTestCases().get(0).getTime(),0);
         assertEquals(1,parser.currentTestSuite.getTests());
         assertEquals(0,parser.currentTestSuite.getFailures());
     }
@@ -128,7 +144,7 @@ public class XCodeBuildOutputParserTest {
         assertNull(parser.currentTestCase);
         assertEquals(1, parser.currentTestSuite.getTestCases().size());
         assertEquals("testThatFails", parser.currentTestSuite.getTestCases().get(0).getName());
-        assertEquals(1.234, parser.currentTestSuite.getTestCases().get(0).getTime());
+        assertEquals(1.234, parser.currentTestSuite.getTestCases().get(0).getTime(),0);
         assertEquals(1,parser.currentTestSuite.getTests());
         assertEquals(1,parser.currentTestSuite.getFailures());
     }
