@@ -7,9 +7,9 @@
     </parent>
 
     <scm>
-        <connection>scm:git:git://github.com/rayh/xcode-hudson-plugin.git/tags/xcode-builder-0.1</connection>
-        <developerConnection>scm:git:git@github.com:rayh/xcode-hudson-plugin.git/tags/xcode-builder-0.1</developerConnection>
-        <url>http://github.com/rayh/xcode-hudson-plugin/tags/xcode-builder-0.1</url>
+        <connection>scm:git:git@github.com:aheritier/xcode-hudson-plugin.git</connection>
+        <developerConnection>scm:git:git@github.com:aheritier/xcode-hudson-plugin.git</developerConnection>
+        <url>https://github.com/aheritier/xcode-hudson-plugin</url>
     </scm>
 
     <build>
