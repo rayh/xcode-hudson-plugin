@@ -1,25 +1,26 @@
 package au.com.rayh;
 import com.google.common.collect.Lists;
 import hudson.EnvVars;
-import hudson.Launcher;
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.util.FormValidation;
+import hudson.Launcher;
 import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
 import hudson.model.AbstractProject;
-import hudson.tasks.Builder;
+import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
+import hudson.tasks.Builder;
+import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
 
 import javax.servlet.ServletException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * @author Ray Hilton
@@ -134,28 +135,28 @@ public class XCodeBuilder extends Builder {
         
         if(updateBuildNumber) {
             listener.getLogger().println("Updating version number (CFBundleVersion) to " + versionNumber);
-            //ByteArrayOutputStream output = new ByteArrayOutputStream();
-            //returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
-            //if(returnCode>0) {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
+            if(returnCode>0) {
 
-            //} else {
-            //    String marketingVersionNumber = output.toString().trim();
-            //    artifactVersion = marketingVersionNumber + "." + build.getNumber();
-            //    listener.getLogger().println("CFBundleShortVersionString is " + marketingVersionNumber + " so new CFBundleVersion will be " + artifactVersion);
-            //}
+            } else {
+                String marketingVersionNumber = output.toString().trim();
+                artifactVersion = marketingVersionNumber + "." + build.getNumber();
+                listener.getLogger().println("CFBundleShortVersionString is " + marketingVersionNumber + " so new CFBundleVersion will be " + artifactVersion);
+            }
 
             returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", versionNumber ).stdout(listener).pwd(projectRoot).join();
             if(returnCode>0) {
                 listener.fatalError("Could not set the CFBundleVersion to " + versionNumber);
             }
-//        } else {
-//            listener.getLogger().println("Fetching marketing version number (CFBundleShortVersionString)");
-//            ByteArrayOutputStream output = new ByteArrayOutputStream();
-//            returnCode = launcher.launch().envs(envs).cmds("agvtool", "vers", "-terse").stdout(output).pwd(projectRoot).join();
-//
-//            // only use this version number if we found it
-//            if(returnCode==0)
-//                artifactVersion = output.toString().trim();
+        } else {
+            listener.getLogger().println("Fetching marketing version number (CFBundleShortVersionString)");
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            returnCode = launcher.launch().envs(envs).cmds("agvtool", "vers", "-terse").stdout(output).pwd(projectRoot).join();
+
+            // only use this version number if we found it
+            if(returnCode==0)
+                artifactVersion = output.toString().trim();
         }
         
         if( false == StringUtils.isEmpty(overrideMarketingNumber) ) {
