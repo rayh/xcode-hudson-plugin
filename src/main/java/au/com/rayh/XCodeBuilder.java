@@ -211,12 +211,12 @@ public class XCodeBuilder extends Builder {
         commandLine.add(configuration);
         xcodeReport.append(", configuration: ").append(configuration);
 
-//        if (cleanBeforeBuild) {
-//            commandLine.add("clean");
-//            xcodeReport.append(", clean: YES");
-//        } else {
-//            xcodeReport.append(", clean: NO");
-//        }
+        if (cleanBeforeBuild) {
+            commandLine.add("clean");
+            xcodeReport.append(", clean: YES");
+        } else {
+            xcodeReport.append(", clean: NO");
+        }
         commandLine.add("build");
         
         listener.getLogger().println(xcodeReport.toString());
