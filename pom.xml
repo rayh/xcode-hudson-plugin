@@ -6,8 +6,7 @@
         <version>1.399</version>
     </parent>
 
-    <groupId>hudson.plugins.xcode</groupId>
-    <artifactId>xcode</artifactId>
+    <artifactId>xcode-plugin</artifactId>
     <version>0.1-SNAPSHOT</version>
     <name>XCode integration for Jenkins CI</name>
     <packaging>hpi</packaging>
