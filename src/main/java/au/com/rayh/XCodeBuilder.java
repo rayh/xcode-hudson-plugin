@@ -236,7 +236,7 @@ public class XCodeBuilder extends Builder {
             List<FilePath> apps = buildDirectory.list(new AppFileFilter());
 
             for(FilePath app : apps) {
-                String baseName = app.getBaseName().replaceAll(" ","-") + "-" + configuration + "-" + versionNumber;
+                String baseName = app.getBaseName().replaceAll(" ","-") + "-" + configuration.replaceAll(" ","_") + "-" + versionNumber;
                 FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
 
                 FilePath payload = buildDirectory.child("Payload");
