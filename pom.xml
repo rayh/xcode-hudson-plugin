@@ -6,6 +6,12 @@
       <version>1.433</version>
     </parent>
 
+    <groupId>hudson.plugins.xcode</groupId>
+    <artifactId>xcode</artifactId>
+    <version>0.1-SNAPSHOT</version>
+    <name>XCode integration for Jenkins CI</name>
+    <packaging>hpi</packaging>
+
     <scm>
         <connection>scm:git:git@github.com:aheritier/xcode-hudson-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:aheritier/xcode-hudson-plugin.git</developerConnection>
@@ -43,12 +49,6 @@
             <email>ray.hilton@gmail.com</email>
         </developer>
     </developers>
-
-    <groupId>hudson.plugins.xcode</groupId>
-    <artifactId>xcode</artifactId>
-    <version>0.1-SNAPSHOT</version>
-    <name>XCode integration for Hudson CI</name>
-    <packaging>hpi</packaging>
 
   <!-- get every artifact through maven.glassfish.org, which proxies all the artifacts that we need -->
     <repositories>
