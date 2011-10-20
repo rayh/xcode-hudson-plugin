@@ -12,6 +12,8 @@ import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.tokenmacro.MacroEvaluationException;
+import org.jenkinsci.plugins.tokenmacro.TokenMacro;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -28,34 +30,32 @@ import java.util.List;
 public class XCodeBuilder extends Builder {
     private Boolean buildIpa;
     private Boolean cleanBeforeBuild;
-    private Boolean updateBuildNumber;
     private String configuration;
-    private String overrideMarketingNumber;
+    private String cfBundleShortVersionStringPattern;
     private String target;
     private String sdk;
     private String xcodeProjectPath;
     private String xcodeProjectFile;
     private String embeddedProfileFile;
-    private String versionNumberPattern;
+    private String cfBundleVersionPattern;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String versionNumberPattern, String overrideMarketingNumber) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionPattern, String cfBundleShortVersionStringPattern) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
         this.cleanBeforeBuild = cleanBeforeBuild;
-        this.updateBuildNumber = updateBuildNumber;
-        this.overrideMarketingNumber = overrideMarketingNumber;
+        this.cfBundleShortVersionStringPattern = cfBundleShortVersionStringPattern;
         this.configuration = configuration;
         this.xcodeProjectPath = xcodeProjectPath;
         this.xcodeProjectFile = xcodeProjectFile;
         this.embeddedProfileFile = embeddedProfileFile;
-        this.versionNumberPattern = versionNumberPattern;
+        this.cfBundleVersionPattern = cfBundleVersionPattern;
     }
 
-    public String getVersionNumberPattern() {
-        return versionNumberPattern;
+    public String getCfBundleVersionPattern() {
+        return cfBundleVersionPattern;
     }
     public String getSdk() {
         return sdk;
@@ -77,12 +77,8 @@ public class XCodeBuilder extends Builder {
         return cleanBeforeBuild;
     }
 
-    public Boolean getUpdateBuildNumber() {
-        return updateBuildNumber;
-    }
-
-    public String getOverrideMarketingNumber() {
-        return overrideMarketingNumber;
+    public String getCfBundleShortVersionStringPattern() {
+        return cfBundleShortVersionStringPattern;
     }
 
     public String getXcodeProjectPath() {
@@ -119,54 +115,78 @@ public class XCodeBuilder extends Builder {
 
         // XCode Version
         int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().xcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
-        if(returnCode>0) return false;
-
-        // Unlock keychain
-//        if(!StringUtils.isEmpty(keychainPassword)) {
-//            launcher.launch().envs(envs).cmds("security", "unlock-keychain", "-p", keychainPassword);
-//        }
-
-        // Set build number
-        String artifactVersion = String.valueOf(build.getNumber());
-        String versionNumber = artifactVersion;
-        if(!StringUtils.isEmpty(getVersionNumberPattern())) {
-             versionNumber = getVersionNumberPattern().replaceAll("\\$\\{BUILD_NUMBER\\}", artifactVersion);
+        if(returnCode>0){
+            listener.fatalError("Check your XCode installation. Jenkins cannot retrieve its version.");
+            return false; // We fail the build if XCode isn't deployed
         }
-        
-        if(updateBuildNumber) {
-            listener.getLogger().println("Updating version number (CFBundleVersion) to " + versionNumber);
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
-            if(returnCode>0) {
 
-            } else {
-                String marketingVersionNumber = output.toString().trim();
-                artifactVersion = marketingVersionNumber + "." + build.getNumber();
-                listener.getLogger().println("CFBundleShortVersionString is " + marketingVersionNumber + " so new CFBundleVersion will be " + artifactVersion);
+        listener.getLogger().println("Fetching marketing version number (CFBundleShortVersionString) from project.");
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        String cfBundleShortVersionString="";
+        returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
+        // only use this version number if we found it
+        if(returnCode==0)
+            cfBundleShortVersionString = output.toString().trim();
+        if(cfBundleShortVersionString.isEmpty())
+            listener.getLogger().println("No marketing version found (CFBundleShortVersionString)");
+        else
+            listener.getLogger().println("Found marketing version (CFBundleShortVersionString)"+cfBundleShortVersionString);
+
+        String cfBundleVersion="";
+        returnCode = launcher.launch().envs(envs).cmds("agvtool", "vers", "-terse").stdout(output).pwd(projectRoot).join();
+        // only use this version number if we found it
+        if(returnCode==0)
+            cfBundleVersion = output.toString().trim();
+        if(cfBundleVersion.isEmpty())
+            listener.getLogger().println("No marketing version found (CFBundleVersion)");
+        else
+            listener.getLogger().println("Found marketing version (CFBundleVersion)"+cfBundleShortVersionString);
+
+        listener.getLogger().println("Marketing version (CFBundleShortVersionString) found in project configuration :" + cfBundleShortVersionString);
+        listener.getLogger().println("Technical version (CFBundleVersion) found in project configuration :"+ cfBundleVersion);
+
+        // Update the Marketing version (CFBundleShortVersionString)
+        if( false == StringUtils.isEmpty(cfBundleShortVersionStringPattern) ) {
+            try {
+                // If not empty we use the Token Expansion to replace it
+                // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
+                cfBundleShortVersionString = TokenMacro.expand(build, listener, getCfBundleShortVersionStringPattern());
+                listener.getLogger().println("Updating marketing version (CFBundleShortVersionString) to " + cfBundleShortVersionString);
+                returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
+                if(returnCode>0) {
+                    listener.fatalError("Could not set CFBundleShortVersionString to " + cfBundleShortVersionString);
+                    return false;
+                }
+            } catch (MacroEvaluationException e) {
+                listener.fatalError("Failure while expanding macros for CFBundleShortVersionString. Error : "+e.getMessage());
+                return false;
             }
-
-            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", versionNumber ).stdout(listener).pwd(projectRoot).join();
-            if(returnCode>0) {
-                listener.fatalError("Could not set the CFBundleVersion to " + versionNumber);
-            }
-        } else {
-            listener.getLogger().println("Fetching marketing version number (CFBundleShortVersionString)");
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            returnCode = launcher.launch().envs(envs).cmds("agvtool", "vers", "-terse").stdout(output).pwd(projectRoot).join();
-
-            // only use this version number if we found it
-            if(returnCode==0)
-                artifactVersion = output.toString().trim();
         }
-        
-        if( false == StringUtils.isEmpty(overrideMarketingNumber) ) {
-            listener.getLogger().println("Updating marketing version to " + overrideMarketingNumber);
+
+        if( ! StringUtils.isEmpty(getCfBundleVersionPattern()) ) {
+            try {
+                // If not empty we use the Token Expansion to replace it
+                // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
+                String technicalVersion = TokenMacro.expand(build, listener, getCfBundleVersionPattern());
+                output = new ByteArrayOutputStream();
+                // Read the current Marketing Version in the project
+                cfBundleVersion = cfBundleShortVersionString.isEmpty() ? technicalVersion : cfBundleShortVersionString + "_" + technicalVersion;
+                listener.getLogger().println("CFBundleShortVersionString is " + cfBundleShortVersionString + " so new CFBundleVersion will be updated to " + cfBundleVersion);
+                returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", cfBundleVersion ).stdout(listener).pwd(projectRoot).join();
+                if(returnCode>0) {
+                    listener.fatalError("Could not set the CFBundleVersion to " + cfBundleVersion);
+                    return false;
+                }
+            } catch (MacroEvaluationException e) {
+                listener.fatalError("Failure while expanding macros for CFBundleVersion. Error : "+e.getMessage());
+                // Fails the build
+                return false;
+            }
             
-            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-marketing-version", overrideMarketingNumber ).stdout(listener).pwd(projectRoot).join();
-            if(returnCode>0) {
-                listener.fatalError("Could not set marketing version to " + overrideMarketingNumber);
-            }
         }
+
+        listener.getLogger().println("Marketing version (CFBundleShortVersionString) used by Jenkins to produce the IPA :" + cfBundleShortVersionString);
+        listener.getLogger().println("Technical version (CFBundleVersion) used by Jenkins to produce the IPA :"+ cfBundleVersion);
 
         // Clean build directories
         if(cleanBeforeBuild) {
@@ -236,7 +256,17 @@ public class XCodeBuilder extends Builder {
             List<FilePath> apps = buildDirectory.list(new AppFileFilter());
 
             for(FilePath app : apps) {
-                String baseName = app.getBaseName().replaceAll(" ","-") + "-" + configuration.replaceAll(" ","_") + "-" + versionNumber;
+                String version = "";
+                if (cfBundleShortVersionString.isEmpty() && cfBundleVersion.isEmpty())
+                    version = ""+build.getNumber();
+                else if (cfBundleVersion.isEmpty())
+                    version = cfBundleShortVersionString;
+                else
+                    version = cfBundleVersion;
+
+                String baseName = app.getBaseName().replaceAll(" ","_") + "-" +
+                        configuration.replaceAll(" ","_") + (version.isEmpty() ? "" : "-"+version);
+                
                 FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
 
                 FilePath payload = buildDirectory.child("Payload");

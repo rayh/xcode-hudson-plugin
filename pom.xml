@@ -17,6 +17,14 @@
         <url>https://github.com/aheritier/xcode-hudson-plugin</url>
     </scm>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>token-macro</artifactId>
+            <version>1.4</version>
+        </dependency>
+    </dependencies>
+
     <build>
         <extensions>
             <extension>

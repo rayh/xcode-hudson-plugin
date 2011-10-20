@@ -5,66 +5,60 @@
 
     See global.jelly for a general discussion about jelly script.
   -->
+    <f:entry title="Clean before build?" field="cleanBeforeBuild"
+      help="/plugin/xcode-plugin/help-cleanBeforeBuild.html">
+        <f:checkbox name="xcode.cleanBeforeBuild" checked="${instance.cleanBeforeBuild}" />
+    </f:entry>
 
     <f:entry title="Target" field="target"
       description="Leave empty for all targets"
-      help="/plugin/xcode/help-target.html">
+      help="/plugin/xcode-plugin/help-target.html">
         <f:textbox name="xcode.target" value="${instance.target}" />
     </f:entry>
 
     <f:entry title="SDK" field="sdk" 
       description="Leave empty for default SDK"
-      help="/plugin/xcode/help-sdk.html">
+      help="/plugin/xcode-plugin/help-sdk.html">
         <f:textbox name="xcode.sdk" value="${instance.sdk}" />
     </f:entry>
 
     <f:entry title="Configuration" field="configuration"
-      help="/plugin/xcode/help-configuration.html">
+      help="/plugin/xcode-plugin/help-configuration.html">
         <f:textbox name="xcode.configuration" value="${instance.configuration}" default="Release"/>
     </f:entry>
 
     <f:entry title="Xcode Project Directory" field="xcodeProjectPath"
       description="Relative path within the workspace that contains the xcode project file(s).  Only needed if project file is not in the workspace root."
-      help="/plugin/xcode/help-xcodeProjectPath.html">
+      help="/plugin/xcode-plugin/help-xcodeProjectPath.html">
         <f:textbox name="xcode.xcodeProjectPath" value="${instance.xcodeProjectPath}" />
     </f:entry>
 
     <f:entry title="Xcode Project File" field="xcodeProjectFile"
       description="Only needed if there is more than one project file in the Xcode Project Directory"
-      help="/plugin/xcode/help-xcodeProjectFile.html">
+      help="/plugin/xcode-plugin/help-xcodeProjectFile.html">
         <f:textbox name="xcode.xcodeProjectFile" value="${instance.xcodeProjectFile}" />
     </f:entry>
-   
-    <f:entry title="Update CFBundleVersion with build number?" field="updateBuildNumber"
-      help="/plugin/xcode/help-updateBuildNumber.html">
-        <f:checkbox name="xcode.updateBuildNumber" checked="${instance.updateBuildNumber}" />
-    </f:entry>
-    
-	<f:entry title="New Marketing number" field="overrideMarketingNumber"
-	  description="Leave blank to use projects marketing number."
-	  help="/plugin/xcode/help-updateMarketingNumber.html">
-	  <f:textbox name="xcode.overrideMarketingNumber" value="${instance.overrideMarketingNumber}" />
-	</f:entry>
 
-    <f:entry title="CFBundleVersion pattern" field="versionNumberPattern"
-      description="The pattern for settings the CFBundleVersion.  The value ${BUILD_NUMBER} will be replaced with the current build number"
-      help="/plugin/xcode/help-versionNumberPattern.html">
-        <f:textbox name="xcode.versionNumberPattern" value="${instance.versionNumberPattern}" default="${BUILD_NUMBER}"/>
-    </f:entry>
+    <f:entry title="Marketing version pattern" field="cfBundleShortVersionStringPattern"
+   	  description="The pattern to set the CFBundleShortVersionString. Leave blank to use projects marketing number."
+   	  help="/plugin/xcode-plugin/help-cfBundleShortVersionStringPattern.html">
+   	  <f:textbox name="xcode.cfBundleShortVersionStringPattern" value="${instance.cfBundleShortVersionStringPattern}" />
+   	</f:entry>
 
-    <f:entry title="Clean before build?" field="cleanBeforeBuild"
-      help="/plugin/xcode/help-cleanBeforeBuild.html">
-        <f:checkbox name="xcode.cleanBeforeBuild" checked="${instance.cleanBeforeBuild}" />
+    <f:entry title="Technical version pattern" field="cfBundleVersionPattern"
+      description="The pattern to set the CFBundleVersion. If defined the Marketing version will prefix it. Leave blank to use projects marketing number."
+      help="/plugin/xcode-plugin/help-cfBundleVersionPattern.html">
+        <f:textbox name="xcode.cfBundleVersionPattern" value="${instance.cfBundleVersionPattern}"/>
     </f:entry>
 
     <f:entry title="Build IPA?" field="buildIpa"
-      help="/plugin/xcode/help-buildIpa.html">
+      help="/plugin/xcode-plugin/help-buildIpa.html">
         <f:checkbox name="xcode.buildIpa" checkbox="${instance.buildIpa}" />
     </f:entry>
 
     <f:entry title="Embedded Profile" field="embeddedProfileFile"
       description="The relative path to the mobileprovision to embed, leave blank for no embedded profile"
-      help="/plugin/xcode/help-embeddedProfileFile.html">
+      help="/plugin/xcode-plugin/help-embeddedProfileFile.html">
         <f:textbox name="xcode.embeddedProfileFile" checkbox="${instance.embeddedProfileFile}" />
     </f:entry>
 </j:jelly>
