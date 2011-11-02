@@ -28,16 +28,16 @@ import java.util.List;
  * @author Ray Hilton
  */
 public class XCodeBuilder extends Builder {
-    private Boolean buildIpa;
-    private Boolean cleanBeforeBuild;
-    private String configuration;
-    private String cfBundleShortVersionStringPattern;
-    private String target;
-    private String sdk;
-    private String xcodeProjectPath;
-    private String xcodeProjectFile;
-    private String embeddedProfileFile;
-    private String cfBundleVersionPattern;
+    public final Boolean buildIpa;
+    public final Boolean cleanBeforeBuild;
+    public final String configuration;
+    public final String cfBundleShortVersionStringPattern;
+    public final String target;
+    public final String sdk;
+    public final String xcodeProjectPath;
+    public final String xcodeProjectFile;
+    public final String embeddedProfileFile;
+    public final String cfBundleVersionPattern;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
@@ -52,45 +52,6 @@ public class XCodeBuilder extends Builder {
         this.xcodeProjectFile = xcodeProjectFile;
         this.embeddedProfileFile = embeddedProfileFile;
         this.cfBundleVersionPattern = cfBundleVersionPattern;
-    }
-
-    public String getCfBundleVersionPattern() {
-        return cfBundleVersionPattern;
-    }
-    public String getSdk() {
-        return sdk;
-    }
-
-    public String getTarget() {
-        return target;
-    }
-
-    public String getConfiguration() {
-        return configuration;
-    }
-
-    public Boolean getBuildIpa() {
-        return buildIpa;
-    }
-
-    public Boolean getCleanBeforeBuild() {
-        return cleanBeforeBuild;
-    }
-
-    public String getCfBundleShortVersionStringPattern() {
-        return cfBundleShortVersionStringPattern;
-    }
-
-    public String getXcodeProjectPath() {
-        return xcodeProjectPath;
-    }
-
-    public String getXcodeProjectFile() {
-        return xcodeProjectFile;
-    }
-
-    public String getEmbeddedProfileFile() {
-        return embeddedProfileFile;
     }
 
     @Override
@@ -150,7 +111,7 @@ public class XCodeBuilder extends Builder {
             try {
                 // If not empty we use the Token Expansion to replace it
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-                cfBundleShortVersionString = TokenMacro.expand(build, listener, getCfBundleShortVersionStringPattern());
+                cfBundleShortVersionString = TokenMacro.expand(build, listener, cfBundleShortVersionStringPattern);
                 listener.getLogger().println("Updating marketing version (CFBundleShortVersionString) to " + cfBundleShortVersionString);
                 returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
                 if(returnCode>0) {
@@ -163,11 +124,11 @@ public class XCodeBuilder extends Builder {
             }
         }
 
-        if( ! StringUtils.isEmpty(getCfBundleVersionPattern()) ) {
+        if( ! StringUtils.isEmpty(cfBundleVersionPattern) ) {
             try {
                 // If not empty we use the Token Expansion to replace it
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-                String technicalVersion = TokenMacro.expand(build, listener, getCfBundleVersionPattern());
+                String technicalVersion = TokenMacro.expand(build, listener, cfBundleVersionPattern);
                 output = new ByteArrayOutputStream();
                 // Read the current Marketing Version in the project
                 cfBundleVersion = cfBundleShortVersionString.isEmpty() ? technicalVersion : cfBundleShortVersionString + "_" + technicalVersion;
