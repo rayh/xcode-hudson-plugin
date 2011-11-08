@@ -9,7 +9,8 @@
   <artifactId>xcode-plugin</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>hpi</packaging>
-  <name>XCode integration for Jenkins CI</name>
+  <name>XCode integration</name>
+  <description>This plugin adds the ability to call XCode for mobile developments (iPhone, iPad, etc).</description>
   <developers>
     <developer>
       <id>rayhilton</id>
