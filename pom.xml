@@ -11,6 +11,7 @@
   <packaging>hpi</packaging>
   <name>XCode integration</name>
   <description>This plugin adds the ability to call XCode for mobile developments (iPhone, iPad, etc).</description>
+  <url>https://wiki.jenkins-ci.org/display/JENKINS/XCode+Plugin</url>
   <developers>
     <developer>
       <id>rayhilton</id>
