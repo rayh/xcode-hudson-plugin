@@ -24,9 +24,9 @@
     </developer>
   </developers>
   <scm>
-    <connection>scm:git:git@github.com:aheritier/xcode-hudson-plugin.git</connection>
-    <developerConnection>scm:git:git@github.com:aheritier/xcode-hudson-plugin.git</developerConnection>
-    <url>https://github.com/aheritier/xcode-hudson-plugin</url>
+    <connection>scm:git:git@github.com:jenkinsci/xcode-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:jenkinsci/xcode-plugin.git</developerConnection>
+    <url>https://github.com/jenkinsci/xcode-plugin</url>
   </scm>
   <!-- get every artifact through maven.glassfish.org, which proxies all the artifacts that we need -->
   <repositories>
