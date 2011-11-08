@@ -17,6 +17,11 @@
       <name>Ray Yamamoto Hilton</name>
       <email>ray.hilton@gmail.com</email>
     </developer>
+    <developer>
+      <id>aheritier</id>
+      <name>Arnaud Héritier</name>
+      <email>aheritier@apache.org</email>
+    </developer>
   </developers>
   <scm>
     <connection>scm:git:git@github.com:aheritier/xcode-hudson-plugin.git</connection>
