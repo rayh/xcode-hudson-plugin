@@ -1,3 +1,27 @@
+/*
+ * The MIT License
+ *
+ * Copyright (c) 2011 Ray Yamamoto Hilton
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 package au.com.rayh;
 import com.google.common.collect.Lists;
 import hudson.EnvVars;
@@ -143,7 +167,7 @@ public class XCodeBuilder extends Builder {
                 // Fails the build
                 return false;
             }
-            
+
         }
 
         listener.getLogger().println("Marketing version (CFBundleShortVersionString) used by Jenkins to produce the IPA :" + cfBundleShortVersionString);
@@ -154,7 +178,7 @@ public class XCodeBuilder extends Builder {
             listener.getLogger().println("Cleaning build directory (" + projectRoot.child("build") + ")");
             buildDirectory.deleteRecursive();
         }
-        
+
         // remove test-reports and *.ipa
         listener.getLogger().println("Cleaning up test-reports");
         projectRoot.child("test-reports").deleteRecursive();
@@ -171,7 +195,7 @@ public class XCodeBuilder extends Builder {
             commandLine.add(target);
             xcodeReport.append("target: ").append(target);
         }
-        
+
         if(!StringUtils.isEmpty(sdk)) {
             commandLine.add("-sdk");
             commandLine.add(sdk);
@@ -199,7 +223,7 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append(", clean: NO");
         }
         commandLine.add("build");
-        
+
         listener.getLogger().println(xcodeReport.toString());
         returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();
         if(reportGenerator.getExitCode()!=0) return false;
@@ -227,13 +251,13 @@ public class XCodeBuilder extends Builder {
 
                 String baseName = app.getBaseName().replaceAll(" ","_") + "-" +
                         configuration.replaceAll(" ","_") + (version.isEmpty() ? "" : "-"+version);
-                
+
                 FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
 
                 FilePath payload = buildDirectory.child("Payload");
                 payload.deleteRecursive();
                 payload.mkdirs();
-           
+
 
                 listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation);
                 List<String> packageCommandLine = new ArrayList<String>();
@@ -250,7 +274,7 @@ public class XCodeBuilder extends Builder {
                     packageCommandLine.add("--embed");
                     packageCommandLine.add(embeddedProfileFile);
                 }
-                
+
                 returnCode = launcher.launch().envs(envs).stdout(listener).pwd(projectRoot).cmds(packageCommandLine).join();
                 if(returnCode>0) {
                     listener.getLogger().println("Failed to build " + ipaLocation.getName());
