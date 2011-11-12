@@ -30,5 +30,8 @@
     <f:entry title="agvtool executable path" field="agvtoolPath">
       <f:textbox name="xcode.agvtoolPath" value="${descriptor.agvtoolPath()}" default="/usr/bin/agvtool"/>
     </f:entry>
+    <f:entry title="xcrun executable path" field="xcrunPath">
+      <f:textbox name="xcode.xcrunPath" value="${descriptor.xcrunPath()}" default="/usr/bin/xcrun"/>
+    </f:entry>
   </f:section>
 </j:jelly>
