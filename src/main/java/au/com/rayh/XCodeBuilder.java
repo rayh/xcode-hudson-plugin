@@ -81,7 +81,7 @@ public class XCodeBuilder extends Builder {
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         EnvVars envs = build.getEnvironment(listener);
-        FilePath projectRoot = build.getProject().getWorkspace();
+        FilePath projectRoot = build.getWorkspace();
 
         // check that the configured tools exist
         if(!new FilePath(projectRoot.getChannel(), getDescriptor().xcodebuildPath()).exists()) {
@@ -271,7 +271,7 @@ public class XCodeBuilder extends Builder {
                 } else {
                     packageCommandLine.add("iphoneos");
                 }
-                packageCommandLine.addAll(Lists.newArrayList("PackageApplication", "-v", app.toString(), "-o", ipaLocation.toString()));
+                packageCommandLine.addAll(Lists.newArrayList("PackageApplication", "-v", app.getRemote(), "-o", ipaLocation.getRemote()));
                 if(!StringUtils.isEmpty(embeddedProfileFile)) {
                     packageCommandLine.add("--embed");
                     packageCommandLine.add(embeddedProfileFile);
