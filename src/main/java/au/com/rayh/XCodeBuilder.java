@@ -310,15 +310,6 @@ public class XCodeBuilder extends Builder {
         private String agvtoolPath = "/usr/bin/agvtool";
         private String xcrunPath = "/usr/bin/xcrun";
 
-        public FormValidation doCheckConfiguration(@QueryParameter String value) throws IOException, ServletException {
-            if (StringUtils.isEmpty(value)) {
-                return FormValidation.error("Please specify a configuration");
-            } else {
-                // TODO: scan project file for specified configuration
-            }
-            return FormValidation.ok();
-        }
-
         public FormValidation doCheckXcodebuildPath(@QueryParameter String value) throws IOException, ServletException {
             if (StringUtils.isEmpty(value)) {
                 return FormValidation.error(Messages.XCodeBuilder_xcodebuildPathNotSet());
