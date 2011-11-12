@@ -314,7 +314,7 @@ public class XCodeBuilder extends Builder {
             if (StringUtils.isEmpty(value)) {
                 return FormValidation.error(Messages.XCodeBuilder_xcodebuildPathNotSet());
             } else {
-                // TODO: check that the file exists
+                // TODO: check that the file exists (and if an agent is used ?)
             }
             return FormValidation.ok();
         }
@@ -323,7 +323,7 @@ public class XCodeBuilder extends Builder {
             if (StringUtils.isEmpty(value))
                 return FormValidation.error(Messages.XCodeBuilder_agvtoolPathNotSet());
             else {
-                // TODO: check that the file exists
+                // TODO: check that the file exists (and if an agent is used ?)
             }
             return FormValidation.ok();
         }
@@ -332,7 +332,7 @@ public class XCodeBuilder extends Builder {
             if (StringUtils.isEmpty(value))
                 return FormValidation.error(Messages.XCodeBuilder_xcrunPathNotSet());
             else {
-                // TODO: check that the file exists
+                // TODO: check that the file exists (and if an agent is used ?)
             }
             return FormValidation.ok();
         }
