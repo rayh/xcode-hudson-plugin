@@ -290,10 +290,6 @@ public class XCodeBuilder extends Builder {
                     continue;
                 }
 
-                //listener.getLogger().println("Copying to " + app.getBaseName() + ".ipa");
-                //ipaLocation.copyTo(buildDirectory.child(app.getBaseName() + ".ipa"));
-
-
                 payload.deleteRecursive();
             }
         }
@@ -351,10 +347,6 @@ public class XCodeBuilder extends Builder {
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             // To persist global configuration information,
             // set that to properties and call save().
-//            updateBuildNumber = formData.getBoolean("updateBuildNumber");
-//            buildIpa = formData.getBoolean("buildIpa");
-//            cleanBeforeBuild = formData.getBoolean("cleanBeforeBuild");
-//            configuration = formData.getString("configuration");
             xcodebuildPath = formData.getString("xcodebuildPath");
             agvtoolPath = formData.getString("agvtoolPath");
             // ^Can also use req.bindJSON(this, formData);
