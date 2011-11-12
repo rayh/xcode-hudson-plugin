@@ -85,27 +85,29 @@ public class XCodeBuilder extends Builder {
 
         // check that the configured tools exist
         if(!new FilePath(projectRoot.getChannel(), getDescriptor().xcodebuildPath()).exists()) {
-            listener.fatalError("Cannot find xcodebuild with the configured path {0}", getDescriptor().xcodebuildPath());
+            listener.fatalError(Messages.XCodeBuilder_xcodebuildNotFound(getDescriptor().xcodebuildPath()));
+            return false;
         }
         if(!new FilePath(projectRoot.getChannel(), getDescriptor().agvtoolPath()).exists()) {
-            listener.fatalError("Cannot find agvtool with the configured path {0}", getDescriptor().agvtoolPath());
+            listener.fatalError(Messages.XCodeBuilder_avgtoolNotFound(getDescriptor().agvtoolPath()));
+            return false;
         }
 
         // Set the working directory
         if(!StringUtils.isEmpty(xcodeProjectPath)) {
             projectRoot = projectRoot.child(xcodeProjectPath);
         }
-        listener.getLogger().println("Working directory is " + projectRoot);
+        listener.getLogger().println(Messages.XCodeBuilder_workingDir(projectRoot));
         FilePath buildDirectory = projectRoot.child("build").child(configuration + "-iphoneos");
 
         // XCode Version
         int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().xcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
         if(returnCode>0){
-            listener.fatalError("Check your XCode installation. Jenkins cannot retrieve its version.");
+            listener.fatalError(Messages.XCodeBuilder_xcodeVersionNotFound());
             return false; // We fail the build if XCode isn't deployed
         }
 
-        listener.getLogger().println("Fetching marketing version number (CFBundleShortVersionString) from project.");
+        listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleShortVersionString());
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         String cfBundleShortVersionString="";
         returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
@@ -113,9 +115,9 @@ public class XCodeBuilder extends Builder {
         if(returnCode==0)
             cfBundleShortVersionString = output.toString().trim();
         if(cfBundleShortVersionString.isEmpty())
-            listener.getLogger().println("No marketing version found (CFBundleShortVersionString)");
+            listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringNotFound());
         else
-            listener.getLogger().println("Found marketing version (CFBundleShortVersionString)"+cfBundleShortVersionString);
+            listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringFound(cfBundleShortVersionString));
 
         String cfBundleVersion="";
         returnCode = launcher.launch().envs(envs).cmds("agvtool", "vers", "-terse").stdout(output).pwd(projectRoot).join();
@@ -123,12 +125,12 @@ public class XCodeBuilder extends Builder {
         if(returnCode==0)
             cfBundleVersion = output.toString().trim();
         if(cfBundleVersion.isEmpty())
-            listener.getLogger().println("No marketing version found (CFBundleVersion)");
+            listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionNotFound());
         else
-            listener.getLogger().println("Found marketing version (CFBundleVersion)"+cfBundleShortVersionString);
+            listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionFound(cfBundleShortVersionString));
 
-        listener.getLogger().println("Marketing version (CFBundleShortVersionString) found in project configuration :" + cfBundleShortVersionString);
-        listener.getLogger().println("Technical version (CFBundleVersion) found in project configuration :"+ cfBundleVersion);
+        listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringValue(cfBundleShortVersionString));
+        listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionValue(cfBundleVersion));
 
         // Update the Marketing version (CFBundleShortVersionString)
         if( false == StringUtils.isEmpty(cfBundleShortVersionStringPattern) ) {
@@ -136,14 +138,14 @@ public class XCodeBuilder extends Builder {
                 // If not empty we use the Token Expansion to replace it
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
                 cfBundleShortVersionString = TokenMacro.expand(build, listener, cfBundleShortVersionStringPattern);
-                listener.getLogger().println("Updating marketing version (CFBundleShortVersionString) to " + cfBundleShortVersionString);
+                listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringUpdate(cfBundleShortVersionString));
                 returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
                 if(returnCode>0) {
-                    listener.fatalError("Could not set CFBundleShortVersionString to " + cfBundleShortVersionString);
+                    listener.fatalError(Messages.XCodeBuilder_CFBundleShortVersionStringUpdateError(cfBundleShortVersionString));
                     return false;
                 }
             } catch (MacroEvaluationException e) {
-                listener.fatalError("Failure while expanding macros for CFBundleShortVersionString. Error : "+e.getMessage());
+                listener.fatalError(Messages.XCodeBuilder_CFBundleShortVersionStringMacroError(e.getMessage()));
                 return false;
             }
         }
@@ -159,32 +161,32 @@ public class XCodeBuilder extends Builder {
                 listener.getLogger().println("CFBundleShortVersionString is " + cfBundleShortVersionString + " so new CFBundleVersion will be updated to " + cfBundleVersion);
                 returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", cfBundleVersion ).stdout(listener).pwd(projectRoot).join();
                 if(returnCode>0) {
-                    listener.fatalError("Could not set the CFBundleVersion to " + cfBundleVersion);
+                    listener.fatalError(Messages.XCodeBuilder_CFBundleVersionUpdateError(cfBundleVersion));
                     return false;
                 }
             } catch (MacroEvaluationException e) {
-                listener.fatalError("Failure while expanding macros for CFBundleVersion. Error : "+e.getMessage());
+                listener.fatalError(Messages.XCodeBuilder_CFBundleVersionMacroError(e.getMessage()));
                 // Fails the build
                 return false;
             }
 
         }
 
-        listener.getLogger().println("Marketing version (CFBundleShortVersionString) used by Jenkins to produce the IPA :" + cfBundleShortVersionString);
-        listener.getLogger().println("Technical version (CFBundleVersion) used by Jenkins to produce the IPA :"+ cfBundleVersion);
+        listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringUsed(cfBundleShortVersionString));
+        listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionUsed(cfBundleVersion));
 
         // Clean build directories
         if(cleanBeforeBuild) {
-            listener.getLogger().println("Cleaning build directory (" + projectRoot.child("build") + ")");
+            listener.getLogger().println(Messages.XCodeBuilder_cleaningBuildDir(projectRoot.child("build")));
             buildDirectory.deleteRecursive();
         }
 
         // remove test-reports and *.ipa
-        listener.getLogger().println("Cleaning up test-reports");
+        listener.getLogger().println(Messages.XCodeBuilder_cleaningTestReportsDir());
         projectRoot.child("test-reports").deleteRecursive();
 
         // Build
-        StringBuilder xcodeReport = new StringBuilder("Going to invoke xcodebuild: ");
+        StringBuilder xcodeReport = new StringBuilder(Messages.XCodeBuilder_invokeXcodebuild());
         XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(projectRoot, listener);
         List<String> commandLine = Lists.newArrayList(getDescriptor().xcodebuildPath());
         if(StringUtils.isEmpty(target)) {
@@ -232,12 +234,12 @@ public class XCodeBuilder extends Builder {
 
         // Package IPA
         if(buildIpa) {
-            listener.getLogger().println("Cleaning up previously generate .ipa files");
+            listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
             for(FilePath path : buildDirectory.list("*.ipa")) {
                 path.delete();
             }
 
-            listener.getLogger().println("Packaging IPA");
+            listener.getLogger().println(Messages.XCodeBuilder_packagingIPA());
             List<FilePath> apps = buildDirectory.list(new AppFileFilter());
 
             for(FilePath app : apps) {
@@ -284,7 +286,7 @@ public class XCodeBuilder extends Builder {
                 // also zip up the symbols, if present
                 returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("zip", "-r", "-T", "-y", baseName + "-dSYM.zip", app.getBaseName() + ".app.dSYM").join();
                 if(returnCode>0) {
-                    listener.getLogger().println("Failed to zip *.dSYM into " + baseName + "-dSYM.zip");
+                    listener.getLogger().println(Messages.XCodeBuilder_zipFailed(baseName));
                     continue;
                 }
 
@@ -320,7 +322,7 @@ public class XCodeBuilder extends Builder {
 
         public FormValidation doCheckXcodebuildPath(@QueryParameter String value) throws IOException, ServletException {
             if (StringUtils.isEmpty(value)) {
-                return FormValidation.error("Please specify the path to the xcodebuild executable (usually /usr/bin/xcodebuild)");
+                return FormValidation.error(Messages.XCodeBuilder_xcodebuildPathNotSet());
             } else {
                 // TODO: check that the file exists
             }
@@ -329,7 +331,7 @@ public class XCodeBuilder extends Builder {
 
         public FormValidation doCheckAgvtoolPath(@QueryParameter String value) throws IOException, ServletException {
             if(StringUtils.isEmpty(value))
-                return FormValidation.error("Please specify the path to the agvtool executable (usually /usr/bin/agvtool)");
+                return FormValidation.error(Messages.XCodeBuilder_agvtoolPathNotSet());
             else {
                 // TODO: check that the file exists
             }
@@ -342,7 +344,7 @@ public class XCodeBuilder extends Builder {
         }
 
         public String getDisplayName() {
-            return "XCode";
+            return Messages.XCodeBuilder_xcode();
         }
 
         @Override
