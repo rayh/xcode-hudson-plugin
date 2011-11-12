@@ -24,12 +24,10 @@
 
 <div>
   <p>
-    The pattern to set the CFBundleVersion.<br/>
+    This will set the CFBundleVersion to the specified string.<br/>
     Supports all macros from the <a href="https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin" target="_blank">Token Macro Plugin</a>.<br/>
     For example the value ${BUILD_NUMBER} will be replaced with the current build number.<br/>
-    It will be CFBundleShortVersionString + "_" + this evaluated field.<br/>
-    If CFBundleShortVersionString equals 2.0.0 and CFBundleVersion pattern is "${BUILD_NUMBER}" then for the build #42 you'll have CFBundleVersion equals to 2.0.0_48.<br/>
-    You should use CFBundleShortVersionString (i.e. the marketing version) to provide a public-facing version number such as 2.0.1<br/>
-    Keep it empty to not override the version defined in your project.<br/>
+    We advice you to generate a unique value for each build if you want for example deploy it into a private store.<br/>
+    In that case you can use for example : ${JOBNAME}-${BUILD_NUMBER}
   </p>
 </div>

@@ -55,27 +55,27 @@ public class XCodeBuilder extends Builder {
     public final Boolean buildIpa;
     public final Boolean cleanBeforeBuild;
     public final String configuration;
-    public final String cfBundleShortVersionStringPattern;
     public final String target;
     public final String sdk;
     public final String xcodeProjectPath;
     public final String xcodeProjectFile;
     public final String embeddedProfileFile;
-    public final String cfBundleVersionPattern;
+    public final String cfBundleVersionValue;
+    public final String cfBundleShortVersionStringValue;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionPattern, String cfBundleShortVersionStringPattern) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
         this.cleanBeforeBuild = cleanBeforeBuild;
-        this.cfBundleShortVersionStringPattern = cfBundleShortVersionStringPattern;
         this.configuration = configuration;
         this.xcodeProjectPath = xcodeProjectPath;
         this.xcodeProjectFile = xcodeProjectFile;
         this.embeddedProfileFile = embeddedProfileFile;
-        this.cfBundleVersionPattern = cfBundleVersionPattern;
+        this.cfBundleVersionValue = cfBundleVersionValue;
+        this.cfBundleShortVersionStringValue = cfBundleShortVersionStringValue;
     }
 
     @Override
@@ -107,8 +107,10 @@ public class XCodeBuilder extends Builder {
             return false; // We fail the build if XCode isn't deployed
         }
 
-        listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleShortVersionString());
         ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        // Try to read CFBundleShortVersionString from project
+        listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleShortVersionString());
         String cfBundleShortVersionString="";
         returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
         // only use this version number if we found it
@@ -119,6 +121,8 @@ public class XCodeBuilder extends Builder {
         else
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringFound(cfBundleShortVersionString));
 
+        // Try to read CFBundleVersion from project
+        listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleVersion());
         String cfBundleVersion="";
         returnCode = launcher.launch().envs(envs).cmds("agvtool", "vers", "-terse").stdout(output).pwd(projectRoot).join();
         // only use this version number if we found it
@@ -133,11 +137,11 @@ public class XCodeBuilder extends Builder {
         listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionValue(cfBundleVersion));
 
         // Update the Marketing version (CFBundleShortVersionString)
-        if( false == StringUtils.isEmpty(cfBundleShortVersionStringPattern) ) {
+        if( ! StringUtils.isEmpty(cfBundleShortVersionStringValue) ) {
             try {
                 // If not empty we use the Token Expansion to replace it
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-                cfBundleShortVersionString = TokenMacro.expand(build, listener, cfBundleShortVersionStringPattern);
+                cfBundleShortVersionString = TokenMacro.expand(build, listener, cfBundleShortVersionStringValue);
                 listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringUpdate(cfBundleShortVersionString));
                 returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
                 if(returnCode>0) {
@@ -150,15 +154,13 @@ public class XCodeBuilder extends Builder {
             }
         }
 
-        if( ! StringUtils.isEmpty(cfBundleVersionPattern) ) {
+        // Update the Technical version (CFBundleVersion)
+        if( ! StringUtils.isEmpty(cfBundleVersionValue) ) {
             try {
                 // If not empty we use the Token Expansion to replace it
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-                String technicalVersion = TokenMacro.expand(build, listener, cfBundleVersionPattern);
-                output = new ByteArrayOutputStream();
-                // Read the current Marketing Version in the project
-                cfBundleVersion = cfBundleShortVersionString.isEmpty() ? technicalVersion : cfBundleShortVersionString + "_" + technicalVersion;
-                listener.getLogger().println("CFBundleShortVersionString is " + cfBundleShortVersionString + " so new CFBundleVersion will be updated to " + cfBundleVersion);
+                cfBundleVersion = TokenMacro.expand(build, listener, cfBundleVersionValue);
+                listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionUpdate(cfBundleVersion));
                 returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", cfBundleVersion ).stdout(listener).pwd(projectRoot).join();
                 if(returnCode>0) {
                     listener.fatalError(Messages.XCodeBuilder_CFBundleVersionUpdateError(cfBundleVersion));
@@ -169,7 +171,6 @@ public class XCodeBuilder extends Builder {
                 // Fails the build
                 return false;
             }
-
         }
 
         listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringUsed(cfBundleShortVersionString));

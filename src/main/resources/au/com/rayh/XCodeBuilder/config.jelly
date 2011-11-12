@@ -63,16 +63,16 @@
         <f:textbox name="xcode.xcodeProjectFile" value="${instance.xcodeProjectFile}" />
     </f:entry>
 
-    <f:entry title="Marketing version pattern" field="cfBundleShortVersionStringPattern"
-   	  description="The pattern to set the CFBundleShortVersionString. Leave blank to use projects marketing number."
-   	  help="/plugin/xcode-plugin/help-cfBundleShortVersionStringPattern.html">
-   	  <f:textbox name="xcode.cfBundleShortVersionStringPattern" value="${instance.cfBundleShortVersionStringPattern}" />
+    <f:entry title="Marketing version" field="cfBundleShortVersionStringValue"
+   	  description="The value to use for CFBundleShortVersionString. Leave blank to use project's marketing number."
+   	  help="/plugin/xcode-plugin/help-cfBundleShortVersionStringValue.html">
+   	  <f:textbox name="xcode.cfBundleShortVersionStringValue" value="${instance.cfBundleShortVersionStringValue}" />
    	</f:entry>
 
-    <f:entry title="Technical version pattern" field="cfBundleVersionPattern"
-      description="The pattern to set the CFBundleVersion. If defined the Marketing version will prefix it. Leave blank to use projects marketing number."
-      help="/plugin/xcode-plugin/help-cfBundleVersionPattern.html">
-        <f:textbox name="xcode.cfBundleVersionPattern" value="${instance.cfBundleVersionPattern}"/>
+    <f:entry title="Technical version" field="cfBundleVersionValue"
+      description="The value to use for CFBundleVersion. Leave blank to use project's technical number."
+      help="/plugin/xcode-plugin/help-cfBundleVersionValue.html">
+        <f:textbox name="xcode.cfBundleVersionValue" value="${instance.cfBundleVersionValue}"/>
     </f:entry>
 
     <f:entry title="Build IPA?" field="buildIpa"
