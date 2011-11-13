@@ -53,7 +53,6 @@ import java.util.List;
  * @author Ray Hilton
  */
 public class XCodeBuilder extends Builder {
-    public final Boolean buildIpa;
     public final Boolean cleanBeforeBuild;
     public final String configuration;
     public final String target;
@@ -63,10 +62,14 @@ public class XCodeBuilder extends Builder {
     public final String embeddedProfileFile;
     public final String cfBundleVersionValue;
     public final String cfBundleShortVersionStringValue;
+    public final Boolean buildIpa;
+    public final Boolean unlockKeychain;
+    public final String keychainPath;
+    public final String keychainPwd;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -77,6 +80,9 @@ public class XCodeBuilder extends Builder {
         this.embeddedProfileFile = embeddedProfileFile;
         this.cfBundleVersionValue = cfBundleVersionValue;
         this.cfBundleShortVersionStringValue = cfBundleShortVersionStringValue;
+        this.unlockKeychain = unlockKeychain;
+        this.keychainPath = keychainPath;
+        this.keychainPwd = keychainPwd;
     }
 
     @Override
@@ -113,7 +119,7 @@ public class XCodeBuilder extends Builder {
         // Try to read CFBundleShortVersionString from project
         listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleShortVersionString());
         String cfBundleShortVersionString = "";
-        returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
+        returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
         // only use this version number if we found it
         if (returnCode == 0)
             cfBundleShortVersionString = output.toString().trim();
@@ -125,7 +131,7 @@ public class XCodeBuilder extends Builder {
         // Try to read CFBundleVersion from project
         listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleVersion());
         String cfBundleVersion = "";
-        returnCode = launcher.launch().envs(envs).cmds("agvtool", "vers", "-terse").stdout(output).pwd(projectRoot).join();
+        returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "vers", "-terse").stdout(output).pwd(projectRoot).join();
         // only use this version number if we found it
         if (returnCode == 0)
             cfBundleVersion = output.toString().trim();
@@ -187,6 +193,20 @@ public class XCodeBuilder extends Builder {
         listener.getLogger().println(Messages.XCodeBuilder_cleaningTestReportsDir());
         projectRoot.child("test-reports").deleteRecursive();
 
+        if (unlockKeychain) {
+            // Let's unlock the keychain
+            launcher.launch().envs(envs).cmds("/usr/bin/security","list-keychains","-s",keychainPath).stdout(listener).pwd(projectRoot).join();
+            launcher.launch().envs(envs).cmds("/usr/bin/security","login-keychain","-d","user","-s",keychainPath).stdout(listener).pwd(projectRoot).join();
+            if(StringUtils.isEmpty(keychainPwd))
+              returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security","unlock-keychain",keychainPath).stdout(listener).pwd(projectRoot).join();
+            else
+              returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security","unlock-keychain","-p",keychainPwd,keychainPath).masks(false,false,false,true,false).stdout(listener).pwd(projectRoot).join();
+            if (returnCode > 0) {
+                listener.fatalError(Messages.XCodeBuilder_unlockKeychainFailed());
+                return false;
+            }
+        }
+
         // Build
         StringBuilder xcodeReport = new StringBuilder(Messages.XCodeBuilder_invokeXcodebuild());
         XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(projectRoot, listener);
@@ -236,6 +256,7 @@ public class XCodeBuilder extends Builder {
 
         // Package IPA
         if (buildIpa) {
+
             listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
             for (FilePath path : buildDirectory.list("*.ipa")) {
                 path.delete();
