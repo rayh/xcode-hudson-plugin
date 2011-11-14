@@ -94,7 +94,7 @@
     <f:entry title="Keychain path" field="keychainPath"
    	  description="The path of the keychain to use to sign the IPA."
    	  help="/plugin/xcode-plugin/help-keychainPath.html">
-   	  <f:textbox name="xcode.keychainPath" value="${instance.keychainPath}" default="\${HOME}/Library/Keychains/login.keychain"/>
+   	  <f:textbox name="xcode.keychainPath" value="${instance.keychainPath}" default="$${HOME}/Library/Keychains/login.keychain"/>
    	</f:entry>
 
     <f:entry title="Keychain password" field="keychainPwd"
