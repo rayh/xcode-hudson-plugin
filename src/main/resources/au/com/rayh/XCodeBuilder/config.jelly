@@ -29,78 +29,65 @@
 
     See global.jelly for a general discussion about jelly script.
   -->
-    <f:entry title="Clean before build?" field="cleanBeforeBuild"
-      help="/plugin/xcode-plugin/help-cleanBeforeBuild.html">
-        <f:checkbox name="xcode.cleanBeforeBuild" checked="${instance.cleanBeforeBuild}" />
+    <f:entry title="Clean before build?" field="cleanBeforeBuild">
+        <f:checkbox/>
     </f:entry>
 
     <f:entry title="Target" field="target"
-      description="Leave empty for all targets"
-      help="/plugin/xcode-plugin/help-target.html">
-        <f:textbox name="xcode.target" value="${instance.target}" />
+      description="Leave empty for all targets">
+        <f:textbox/>
     </f:entry>
 
     <f:entry title="SDK" field="sdk"
-      description="Leave empty for default SDK"
-      help="/plugin/xcode-plugin/help-sdk.html">
-        <f:textbox name="xcode.sdk" value="${instance.sdk}" />
+      description="Leave empty for default SDK">
+        <f:textbox/>
     </f:entry>
 
-    <f:entry title="Configuration" field="configuration"
-      help="/plugin/xcode-plugin/help-configuration.html">
-        <f:textbox name="xcode.configuration" value="${instance.configuration}" default="Release"/>
+    <f:entry title="Configuration" field="configuration">
+        <f:textbox default="Release"/>
     </f:entry>
 
     <f:entry title="Xcode Project Directory" field="xcodeProjectPath"
-      description="Relative path within the workspace that contains the xcode project file(s).  Only needed if project file is not in the workspace root."
-      help="/plugin/xcode-plugin/help-xcodeProjectPath.html">
-        <f:textbox name="xcode.xcodeProjectPath" value="${instance.xcodeProjectPath}" />
+      description="Relative path within the workspace that contains the xcode project file(s).  Only needed if project file is not in the workspace root.">
+        <f:textbox />
     </f:entry>
 
     <f:entry title="Xcode Project File" field="xcodeProjectFile"
-      description="Only needed if there is more than one project file in the Xcode Project Directory"
-      help="/plugin/xcode-plugin/help-xcodeProjectFile.html">
-        <f:textbox name="xcode.xcodeProjectFile" value="${instance.xcodeProjectFile}" />
+      description="Only needed if there is more than one project file in the Xcode Project Directory">
+        <f:textbox />
     </f:entry>
 
     <f:entry title="Marketing version" field="cfBundleShortVersionStringValue"
-   	  description="The value to use for CFBundleShortVersionString. Leave blank to use project's marketing number."
-   	  help="/plugin/xcode-plugin/help-cfBundleShortVersionStringValue.html">
-   	  <f:textbox name="xcode.cfBundleShortVersionStringValue" value="${instance.cfBundleShortVersionStringValue}" />
+   	  description="The value to use for CFBundleShortVersionString. Leave blank to use project's marketing number.">
+   	  <f:textbox />
    	</f:entry>
 
     <f:entry title="Technical version" field="cfBundleVersionValue"
-      description="The value to use for CFBundleVersion. Leave blank to use project's technical number."
-      help="/plugin/xcode-plugin/help-cfBundleVersionValue.html">
-        <f:textbox name="xcode.cfBundleVersionValue" value="${instance.cfBundleVersionValue}"/>
+      description="The value to use for CFBundleVersion. Leave blank to use project's technical number.">
+        <f:textbox />
     </f:entry>
 
-    <f:entry title="Build IPA?" field="buildIpa"
-      help="/plugin/xcode-plugin/help-buildIpa.html">
-        <f:checkbox name="xcode.buildIpa" value="${instance.buildIpa}" />
+    <f:entry title="Build IPA?" field="buildIpa">
+        <f:checkbox />
     </f:entry>
 
     <f:entry title="Embedded Profile" field="embeddedProfileFile"
-      description="The relative path to the mobileprovision to embed, leave blank for no embedded profile"
-      help="/plugin/xcode-plugin/help-embeddedProfileFile.html">
-        <f:textbox name="xcode.embeddedProfileFile" value="${instance.embeddedProfileFile}" />
+      description="The relative path to the mobileprovision to embed, leave blank for no embedded profile">
+        <f:textbox />
     </f:entry>
 
-    <f:entry title="Unlock Keychain?" field="unlockKeychain"
-      help="/plugin/xcode-plugin/help-unlockKeychain.html">
-        <f:checkbox name="xcode.unlockKeychain" value="${instance.unlockKeychain}" />
+    <f:entry title="Unlock Keychain?" field="unlockKeychain">
+        <f:checkbox />
     </f:entry>
 
     <f:entry title="Keychain path" field="keychainPath"
-   	  description="The path of the keychain to use to sign the IPA."
-   	  help="/plugin/xcode-plugin/help-keychainPath.html">
-   	  <f:textbox name="xcode.keychainPath" value="${instance.keychainPath}" default="$${HOME}/Library/Keychains/login.keychain"/>
+   	  description="The path of the keychain to use to sign the IPA.">
+   	  <f:textbox default="$${HOME}/Library/Keychains/login.keychain"/>
    	</f:entry>
 
     <f:entry title="Keychain password" field="keychainPwd"
-   	  description="The password to use to unlock the keychain."
-   	  help="/plugin/xcode-plugin/help-keychainPwd.html">
-   	  <f:password name="xcode.keychainPwd" value="${instance.keychainPwd}" />
+   	  description="The password to use to unlock the keychain.">
+   	  <f:password />
    	</f:entry>
 
 </j:jelly>

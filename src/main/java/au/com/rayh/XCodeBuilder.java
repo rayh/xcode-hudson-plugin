@@ -91,12 +91,12 @@ public class XCodeBuilder extends Builder {
         FilePath projectRoot = build.getWorkspace();
 
         // check that the configured tools exist
-        if (!new FilePath(projectRoot.getChannel(), getDescriptor().xcodebuildPath()).exists()) {
-            listener.fatalError(Messages.XCodeBuilder_xcodebuildNotFound(getDescriptor().xcodebuildPath()));
+        if (!new FilePath(projectRoot.getChannel(), getDescriptor().getXcodebuildPath()).exists()) {
+            listener.fatalError(Messages.XCodeBuilder_xcodebuildNotFound(getDescriptor().getXcodebuildPath()));
             return false;
         }
-        if (!new FilePath(projectRoot.getChannel(), getDescriptor().agvtoolPath()).exists()) {
-            listener.fatalError(Messages.XCodeBuilder_avgtoolNotFound(getDescriptor().agvtoolPath()));
+        if (!new FilePath(projectRoot.getChannel(), getDescriptor().getAgvtoolPath()).exists()) {
+            listener.fatalError(Messages.XCodeBuilder_avgtoolNotFound(getDescriptor().getAgvtoolPath()));
             return false;
         }
 
@@ -108,7 +108,7 @@ public class XCodeBuilder extends Builder {
         FilePath buildDirectory = projectRoot.child("build").child(configuration + "-iphoneos");
 
         // XCode Version
-        int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().xcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
+        int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getXcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
         if (returnCode > 0) {
             listener.fatalError(Messages.XCodeBuilder_xcodeVersionNotFound());
             return false; // We fail the build if XCode isn't deployed
@@ -119,7 +119,7 @@ public class XCodeBuilder extends Builder {
         // Try to read CFBundleShortVersionString from project
         listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleShortVersionString());
         String cfBundleShortVersionString = "";
-        returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
+        returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
         // only use this version number if we found it
         if (returnCode == 0)
             cfBundleShortVersionString = output.toString().trim();
@@ -131,7 +131,7 @@ public class XCodeBuilder extends Builder {
         // Try to read CFBundleVersion from project
         listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleVersion());
         String cfBundleVersion = "";
-        returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "vers", "-terse").stdout(output).pwd(projectRoot).join();
+        returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "vers", "-terse").stdout(output).pwd(projectRoot).join();
         // only use this version number if we found it
         if (returnCode == 0)
             cfBundleVersion = output.toString().trim();
@@ -150,7 +150,7 @@ public class XCodeBuilder extends Builder {
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
                 cfBundleShortVersionString = TokenMacro.expand(build, listener, cfBundleShortVersionStringValue);
                 listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringUpdate(cfBundleShortVersionString));
-                returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
+                returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
                 if (returnCode > 0) {
                     listener.fatalError(Messages.XCodeBuilder_CFBundleShortVersionStringUpdateError(cfBundleShortVersionString));
                     return false;
@@ -168,7 +168,7 @@ public class XCodeBuilder extends Builder {
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
                 cfBundleVersion = TokenMacro.expand(build, listener, cfBundleVersionValue);
                 listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionUpdate(cfBundleVersion));
-                returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", cfBundleVersion).stdout(listener).pwd(projectRoot).join();
+                returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "new-version", "-all", cfBundleVersion).stdout(listener).pwd(projectRoot).join();
                 if (returnCode > 0) {
                     listener.fatalError(Messages.XCodeBuilder_CFBundleVersionUpdateError(cfBundleVersion));
                     return false;
@@ -210,7 +210,7 @@ public class XCodeBuilder extends Builder {
         // Build
         StringBuilder xcodeReport = new StringBuilder(Messages.XCodeBuilder_invokeXcodebuild());
         XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(projectRoot, listener);
-        List<String> commandLine = Lists.newArrayList(getDescriptor().xcodebuildPath());
+        List<String> commandLine = Lists.newArrayList(getDescriptor().getXcodebuildPath());
         if (StringUtils.isEmpty(target)) {
             commandLine.add("-alltargets");
             xcodeReport.append("target: ALL");
@@ -286,7 +286,7 @@ public class XCodeBuilder extends Builder {
 
                 listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation);
                 List<String> packageCommandLine = new ArrayList<String>();
-                packageCommandLine.add(getDescriptor().xcrunPath());
+                packageCommandLine.add(getDescriptor().getXcrunPath());
                 packageCommandLine.add("-sdk");
 
                 if (!StringUtils.isEmpty(sdk)) {
@@ -369,28 +369,34 @@ public class XCodeBuilder extends Builder {
 
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-            // To persist global configuration information,
-            // set that to properties and call save().
-            xcodebuildPath = formData.getString("xcodebuildPath");
-            agvtoolPath = formData.getString("agvtoolPath");
-            xcrunPath = formData.getString("xcrunPath");
-            // ^Can also use req.bindJSON(this, formData);
-            //  (easier when there are many fields; need set* methods for this, like setUseFrench)
+            req.bindJSON(this, formData);
             save();
             return super.configure(req, formData);
         }
 
-        public String agvtoolPath() {
+        public String getAgvtoolPath() {
             return agvtoolPath;
         }
 
-        public String xcodebuildPath() {
+        public String getXcodebuildPath() {
             return xcodebuildPath;
         }
 
-        public String xcrunPath() {
+        public String getXcrunPath() {
             return xcrunPath;
         }
-    }
+
+        public void setXcodebuildPath(String xcodebuildPath) {
+          this.xcodebuildPath = xcodebuildPath;
+        }
+
+        public void setAgvtoolPath(String agvtoolPath) {
+          this.agvtoolPath = agvtoolPath;
+        }
+
+        public void setXcrunPath(String xcrunPath) {
+          this.xcrunPath = xcrunPath;
+        }
+      }
 }
 
