@@ -62,6 +62,7 @@ public class XCodeBuilder extends Builder {
     public final String embeddedProfileFile;
     public final String cfBundleVersionValue;
     public final String cfBundleShortVersionStringValue;
+    public final String xcodeBuildOutput;
     public final Boolean buildIpa;
     public final Boolean unlockKeychain;
     public final String keychainPath;
@@ -69,7 +70,7 @@ public class XCodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, String xcodeBuildOutput, Boolean unlockKeychain, String keychainPath, String keychainPwd) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -80,6 +81,7 @@ public class XCodeBuilder extends Builder {
         this.embeddedProfileFile = embeddedProfileFile;
         this.cfBundleVersionValue = cfBundleVersionValue;
         this.cfBundleShortVersionStringValue = cfBundleShortVersionStringValue;
+        this.xcodeBuildOutput = xcodeBuildOutput;
         this.unlockKeychain = unlockKeychain;
         this.keychainPath = keychainPath;
         this.keychainPwd = keychainPwd;
@@ -247,6 +249,11 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append(", clean: NO");
         }
         commandLine.add("build");
+
+		if (!StringUtils.isEmpty(xcodeBuildOutput)) {
+            commandLine.add("CONFIGURATION_BUILD_DIR=" + xcodeBuildOutput);
+            xcodeReport.append(", output directory: ").append(xcodeBuildOutput);
+        }
 
         listener.getLogger().println(xcodeReport.toString());
         returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();

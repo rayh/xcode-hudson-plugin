@@ -67,6 +67,11 @@
         <f:textbox />
     </f:entry>
 
+    <f:entry title="Build output directory" field="xcodeBuildOutput"
+      description="Directory where Xcode will put the build product, overriding the project setting.">
+        <f:textbox/>
+    </f:entry>
+
     <f:entry title="Build IPA?" field="buildIpa">
         <f:checkbox />
     </f:entry>
