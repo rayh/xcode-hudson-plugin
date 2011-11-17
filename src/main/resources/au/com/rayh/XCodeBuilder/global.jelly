@@ -23,14 +23,14 @@
   -->
 
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <f:section title="XCode Builder">
-    <f:entry title="xcodebuild executable path" field="xcodebuildPath">
+  <f:section title="${%XCode Builder}">
+    <f:entry title="${%xcodebuild executable path}" field="xcodebuildPath">
       <f:textbox default="/usr/bin/xcodebuild"/>
     </f:entry>
-    <f:entry title="agvtool executable path" field="agvtoolPath">
+    <f:entry title="${%agvtool executable path}" field="agvtoolPath">
       <f:textbox default="/usr/bin/agvtool"/>
     </f:entry>
-    <f:entry title="xcrun executable path" field="xcrunPath">
+    <f:entry title="${%xcrun executable path}" field="xcrunPath">
       <f:textbox default="/usr/bin/xcrun"/>
     </f:entry>
   </f:section>
