@@ -34,12 +34,13 @@ public class XCodeBuilder extends Builder {
     private String sdk;
     private String xcodeProjectPath;
     private String xcodeProjectFile;
+    private String xcodebuildArguments;
     private String embeddedProfileFile;
     private String versionNumberPattern;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String versionNumberPattern, String overrideMarketingNumber) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String versionNumberPattern, String overrideMarketingNumber) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -49,6 +50,7 @@ public class XCodeBuilder extends Builder {
         this.configuration = configuration;
         this.xcodeProjectPath = xcodeProjectPath;
         this.xcodeProjectFile = xcodeProjectFile;
+        this.xcodebuildArguments = xcodebuildArguments;
         this.embeddedProfileFile = embeddedProfileFile;
         this.versionNumberPattern = versionNumberPattern;
     }
@@ -92,6 +94,10 @@ public class XCodeBuilder extends Builder {
         return xcodeProjectFile;
     }
 
+    public String getXcodebuildArguments() {
+        return xcodebuildArguments;
+    }
+
     public String getEmbeddedProfileFile() {
         return embeddedProfileFile;
     }
@@ -131,7 +137,7 @@ public class XCodeBuilder extends Builder {
         if(!StringUtils.isEmpty(getVersionNumberPattern())) {
              versionNumber = getVersionNumberPattern().replaceAll("\\{BUILD_NUMBER\\}", artifactVersion);
         }
-        
+
         if(updateBuildNumber) {
             listener.getLogger().println("Updating version number (CFBundleVersion) to " + versionNumber);
             //ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -157,10 +163,10 @@ public class XCodeBuilder extends Builder {
 //            if(returnCode==0)
 //                artifactVersion = output.toString().trim();
         }
-        
+
         if( false == StringUtils.isEmpty(overrideMarketingNumber) ) {
             listener.getLogger().println("Updating marketing version to " + overrideMarketingNumber);
-            
+
             returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-marketing-version", overrideMarketingNumber ).stdout(listener).pwd(projectRoot).join();
             if(returnCode>0) {
                 listener.fatalError("Could not set marketing version to " + overrideMarketingNumber);
@@ -172,7 +178,7 @@ public class XCodeBuilder extends Builder {
             listener.getLogger().println("Cleaning build directory (" + projectRoot.child("build") + ")");
             buildDirectory.deleteRecursive();
         }
-        
+
         // remove test-reports and *.ipa
         listener.getLogger().println("Cleaning up test-reports");
         projectRoot.child("test-reports").deleteRecursive();
@@ -189,7 +195,7 @@ public class XCodeBuilder extends Builder {
             commandLine.add(target);
             xcodeReport.append("target: ").append(target);
         }
-        
+
         if(!StringUtils.isEmpty(sdk)) {
             commandLine.add("-sdk");
             commandLine.add(sdk);
@@ -217,7 +223,15 @@ public class XCodeBuilder extends Builder {
 //            xcodeReport.append(", clean: NO");
 //        }
         commandLine.add("build");
-        
+
+        // Additional (custom) xcodebuild arguments
+        if (!StringUtils.isEmpty(xcodebuildArguments)) {
+            String[] parts = xcodebuildArguments.split("[ ]");
+            for (String arg : parts) {
+                commandLine.add(arg);
+            }
+        }
+
         listener.getLogger().println(xcodeReport.toString());
         returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();
         if(reportGenerator.getExitCode()!=0) return false;
@@ -241,7 +255,7 @@ public class XCodeBuilder extends Builder {
                 FilePath payload = buildDirectory.child("Payload");
                 payload.deleteRecursive();
                 payload.mkdirs();
-           
+
 
                 listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation);
                 List<String> packageCommandLine = new ArrayList<String>();
@@ -258,7 +272,7 @@ public class XCodeBuilder extends Builder {
                     packageCommandLine.add("--embed");
                     packageCommandLine.add(embeddedProfileFile);
                 }
-                
+
                 returnCode = launcher.launch().envs(envs).stdout(listener).pwd(projectRoot).cmds(packageCommandLine).join();
                 if(returnCode>0) {
                     listener.getLogger().println("Failed to build " + ipaLocation.getName());

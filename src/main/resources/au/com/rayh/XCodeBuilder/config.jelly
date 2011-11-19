@@ -12,7 +12,7 @@
         <f:textbox name="xcode.target" value="${instance.target}" />
     </f:entry>
 
-    <f:entry title="SDK" field="sdk" 
+    <f:entry title="SDK" field="sdk"
       description="Leave empty for default SDK"
       help="/plugin/xcode/help-sdk.html">
         <f:textbox name="xcode.sdk" value="${instance.sdk}" />
@@ -34,12 +34,17 @@
       help="/plugin/xcode/help-xcodeProjectFile.html">
         <f:textbox name="xcode.xcodeProjectFile" value="${instance.xcodeProjectFile}" />
     </f:entry>
-   
+
+    <f:entry title="Custom xcodebuild arguments" field="xcodebuildArguments"
+      help="/plugin/xcode/help-xcodebuildArguments.html">
+        <f:textbox name="xcode.xcodebuildArguments" value="${instance.xcodebuildArguments}" default=""/>
+    </f:entry>
+
     <f:entry title="Update CFBundleVersion with build number?" field="updateBuildNumber"
       help="/plugin/xcode/help-updateBuildNumber.html">
         <f:checkbox name="xcode.updateBuildNumber" checked="${instance.updateBuildNumber}" />
     </f:entry>
-    
+
 	<f:entry title="New Marketing number" field="overrideMarketingNumber"
 	  description="Leave blank to use projects marketing number."
 	  help="/plugin/xcode/help-updateMarketingNumber.html">
