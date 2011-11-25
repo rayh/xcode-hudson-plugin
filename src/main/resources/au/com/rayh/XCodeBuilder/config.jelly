@@ -62,6 +62,11 @@
         <f:checkbox name="xcode.cleanBeforeBuild" checked="${instance.cleanBeforeBuild}" />
     </f:entry>
 
+    <f:entry title="Clean test reports?" field="cleanTestReports"
+      help="/plugin/xcode/help-cleanTestReports.html">
+        <f:checkbox name="xcode.cleanTestReports" checked="${instance.cleanTestReports}" />
+    </f:entry>
+
     <f:entry title="Build IPA?" field="buildIpa"
       help="/plugin/xcode/help-buildIpa.html">
         <f:checkbox name="xcode.buildIpa" checkbox="${instance.buildIpa}" />

@@ -27,6 +27,7 @@ import org.apache.commons.lang.StringUtils;
 public class XCodeBuilder extends Builder {
     private Boolean buildIpa;
     private Boolean cleanBeforeBuild;
+    private Boolean cleanTestReports;
     private Boolean updateBuildNumber;
     private String configuration;
     private String overrideMarketingNumber;
@@ -40,11 +41,12 @@ public class XCodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean updateBuildNumber, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String versionNumberPattern, String overrideMarketingNumber) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, Boolean updateBuildNumber, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String versionNumberPattern, String overrideMarketingNumber) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
         this.cleanBeforeBuild = cleanBeforeBuild;
+        this.cleanTestReports = cleanTestReports;
         this.updateBuildNumber = updateBuildNumber;
         this.overrideMarketingNumber = overrideMarketingNumber;
         this.configuration = configuration;
@@ -76,6 +78,10 @@ public class XCodeBuilder extends Builder {
 
     public Boolean getCleanBeforeBuild() {
         return cleanBeforeBuild;
+    }
+
+    public Boolean getCleanTestReports() {
+        return cleanTestReports;
     }
 
     public Boolean getUpdateBuildNumber() {
@@ -174,14 +180,16 @@ public class XCodeBuilder extends Builder {
         }
 
         // Clean build directories
-        if(cleanBeforeBuild) {
+        if(cleanBeforeBuild != null && cleanBeforeBuild) {
             listener.getLogger().println("Cleaning build directory (" + projectRoot.child("build") + ")");
             buildDirectory.deleteRecursive();
         }
 
         // remove test-reports and *.ipa
-        listener.getLogger().println("Cleaning up test-reports");
-        projectRoot.child("test-reports").deleteRecursive();
+        if(cleanTestReports != null && cleanTestReports) {
+            listener.getLogger().println("Cleaning up test-reports");
+            projectRoot.child("test-reports").deleteRecursive();
+        }
 
         // Build
         StringBuilder xcodeReport = new StringBuilder("Going to invoke xcodebuild: ");
