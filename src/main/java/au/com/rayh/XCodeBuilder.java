@@ -45,6 +45,7 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import javax.servlet.ServletException;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +58,7 @@ public class XCodeBuilder extends Builder {
     public final String configuration;
     public final String target;
     public final String sdk;
+    public final String symRoot;
     public final String xcodeProjectPath;
     public final String xcodeProjectFile;
     public final String embeddedProfileFile;
@@ -68,8 +70,11 @@ public class XCodeBuilder extends Builder {
     public final String keychainPwd;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
+    /**
+     * @since 1.1
+     */
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -83,6 +88,12 @@ public class XCodeBuilder extends Builder {
         this.unlockKeychain = unlockKeychain;
         this.keychainPath = keychainPath;
         this.keychainPwd = keychainPwd;
+        this.symRoot = symRoot;
+    }
+
+    @Deprecated
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd) {
+        this(buildIpa,cleanBeforeBuild,configuration,target,sdk,xcodeProjectPath,xcodeProjectFile,embeddedProfileFile,cfBundleVersionValue,cfBundleShortVersionStringValue,unlockKeychain,keychainPath,keychainPwd,null);
     }
 
     @Override
@@ -105,7 +116,23 @@ public class XCodeBuilder extends Builder {
             projectRoot = projectRoot.child(xcodeProjectPath);
         }
         listener.getLogger().println(Messages.XCodeBuilder_workingDir(projectRoot));
-        FilePath buildDirectory = projectRoot.child("build").child(configuration + "-iphoneos");
+
+        // Set the build directory and the symRoot
+        String symRootValue = null;
+        FilePath buildDirectory;
+        if (!StringUtils.isEmpty(symRoot)) {
+          // If not empty we use the Token Expansion to replace it
+          // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
+          try {
+            symRootValue = TokenMacro.expand(build, listener, symRoot).trim();
+            buildDirectory = new FilePath(new File(symRootValue)).child(configuration + "-iphoneos");
+          } catch (MacroEvaluationException e) {
+            listener.error(Messages.XCodeBuilder_symRootMacroError(e.getMessage()));
+            return false;
+          }
+        } else {
+            buildDirectory = projectRoot.child("build").child(configuration + "-iphoneos");
+        }
 
         // XCode Version
         int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getXcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
@@ -247,6 +274,13 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append(", clean: NO");
         }
         commandLine.add("build");
+
+        if (!StringUtils.isEmpty(symRootValue)) {
+            commandLine.add("SYMROOT="+symRootValue);
+            xcodeReport.append(", symRoot: ").append(symRootValue);
+        } else {
+            xcodeReport.append(", symRoot: DEFAULT");
+        }
 
         listener.getLogger().println(xcodeReport.toString());
         returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();

@@ -43,6 +43,11 @@
         <f:textbox/>
     </f:entry>
 
+    <f:entry title="${%SYMROOT}" field="symRoot"
+      description="Leave empty for default SYMROOT">
+        <f:textbox/>
+    </f:entry>
+
     <f:entry title="${%Configuration}" field="configuration">
         <f:textbox default="Release"/>
     </f:entry>
