@@ -45,7 +45,6 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import javax.servlet.ServletException;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -125,7 +124,7 @@ public class XCodeBuilder extends Builder {
           // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
           try {
             symRootValue = TokenMacro.expand(build, listener, symRoot).trim();
-            buildDirectory = new FilePath(new File(symRootValue)).child(configuration + "-iphoneos");
+            buildDirectory = new FilePath(projectRoot.getChannel(),symRootValue).child(configuration + "-iphoneos");
           } catch (MacroEvaluationException e) {
             listener.error(Messages.XCodeBuilder_symRootMacroError(e.getMessage()));
             return false;
