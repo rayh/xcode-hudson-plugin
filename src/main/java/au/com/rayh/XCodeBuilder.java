@@ -123,10 +123,11 @@ public class XCodeBuilder extends Builder {
           // If not empty we use the Token Expansion to replace it
           // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
           try {
-            symRootValue = TokenMacro.expand(build, listener, symRoot).trim();
+            symRootValue = TokenMacro.expandAll(build, listener, symRoot).trim();
             buildDirectory = new FilePath(projectRoot.getChannel(),symRootValue).child(configuration + "-iphoneos");
           } catch (MacroEvaluationException e) {
             listener.error(Messages.XCodeBuilder_symRootMacroError(e.getMessage()));
+
             return false;
           }
         } else {
@@ -174,7 +175,7 @@ public class XCodeBuilder extends Builder {
             try {
                 // If not empty we use the Token Expansion to replace it
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-                cfBundleShortVersionString = TokenMacro.expand(build, listener, cfBundleShortVersionStringValue);
+                cfBundleShortVersionString = TokenMacro.expandAll(build, listener, cfBundleShortVersionStringValue);
                 listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringUpdate(cfBundleShortVersionString));
                 returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
                 if (returnCode > 0) {
@@ -192,7 +193,7 @@ public class XCodeBuilder extends Builder {
             try {
                 // If not empty we use the Token Expansion to replace it
                 // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-                cfBundleVersion = TokenMacro.expand(build, listener, cfBundleVersionValue);
+                cfBundleVersion = TokenMacro.expandAll(build, listener, cfBundleVersionValue);
                 listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionUpdate(cfBundleVersion));
                 returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "new-version", "-all", cfBundleVersion).stdout(listener).pwd(projectRoot).join();
                 if (returnCode > 0) {
