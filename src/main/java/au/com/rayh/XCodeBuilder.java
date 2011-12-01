@@ -65,6 +65,7 @@ public class XCodeBuilder extends Builder {
     public final String embeddedProfileFile;
     public final String cfBundleVersionValue;
     public final String cfBundleShortVersionStringValue;
+    public final String xcodeBuildOutput;
     public final Boolean buildIpa;
     public final Boolean unlockKeychain;
     public final String keychainPath;
@@ -75,7 +76,7 @@ public class XCodeBuilder extends Builder {
      * @since 1.1
      */
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodeWorkspaceFile, String xcodeSchema, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodeWorkspaceFile, String xcodeSchema, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, String xcodeBuildOutput, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -88,6 +89,7 @@ public class XCodeBuilder extends Builder {
         this.embeddedProfileFile = embeddedProfileFile;
         this.cfBundleVersionValue = cfBundleVersionValue;
         this.cfBundleShortVersionStringValue = cfBundleShortVersionStringValue;
+        this.xcodeBuildOutput = xcodeBuildOutput;
         this.unlockKeychain = unlockKeychain;
         this.keychainPath = keychainPath;
         this.keychainPwd = keychainPwd;
@@ -96,7 +98,7 @@ public class XCodeBuilder extends Builder {
 
     @Deprecated
     public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd) {
-        this(buildIpa,cleanBeforeBuild,configuration,target,sdk,xcodeProjectPath,xcodeProjectFile,embeddedProfileFile,null, null, cfBundleVersionValue,cfBundleShortVersionStringValue,unlockKeychain,keychainPath,keychainPwd,null);
+        this(buildIpa,cleanBeforeBuild,configuration,target,sdk,xcodeProjectPath,xcodeProjectFile,embeddedProfileFile,null, null, cfBundleVersionValue,cfBundleShortVersionStringValue,null, unlockKeychain,keychainPath,keychainPwd,null);
     }
 
     @Override
@@ -295,6 +297,11 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append(", symRoot: ").append(symRootValue);
         } else {
             xcodeReport.append(", symRoot: DEFAULT");
+        }
+
+		if (!StringUtils.isEmpty(xcodeBuildOutput)) {
+            commandLine.add("CONFIGURATION_BUILD_DIR=" + xcodeBuildOutput);
+            xcodeReport.append(", output directory: ").append(xcodeBuildOutput);
         }
 
         listener.getLogger().println(xcodeReport.toString());
