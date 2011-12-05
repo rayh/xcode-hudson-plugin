@@ -58,6 +58,7 @@ public class XCodeBuilder extends Builder {
     public final String target;
     public final String sdk;
     public final String symRoot;
+    public final String configurationBuildDir;
     public final String xcodeProjectPath;
     public final String xcodeProjectFile;
     public final String embeddedProfileFile;
@@ -73,7 +74,7 @@ public class XCodeBuilder extends Builder {
      * @since 1.1
      */
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String configurationBuildDir) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -88,11 +89,12 @@ public class XCodeBuilder extends Builder {
         this.keychainPath = keychainPath;
         this.keychainPwd = keychainPwd;
         this.symRoot = symRoot;
+        this.configurationBuildDir = configurationBuildDir;
     }
 
     @Deprecated
     public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd) {
-        this(buildIpa,cleanBeforeBuild,configuration,target,sdk,xcodeProjectPath,xcodeProjectFile,embeddedProfileFile,cfBundleVersionValue,cfBundleShortVersionStringValue,unlockKeychain,keychainPath,keychainPwd,null);
+        this(buildIpa,cleanBeforeBuild,configuration,target,sdk,xcodeProjectPath,xcodeProjectFile,embeddedProfileFile,cfBundleVersionValue,cfBundleShortVersionStringValue,unlockKeychain,keychainPath,keychainPwd,null,null);
     }
 
     @Override
@@ -116,23 +118,52 @@ public class XCodeBuilder extends Builder {
         }
         listener.getLogger().println(Messages.XCodeBuilder_workingDir(projectRoot));
 
-        // Set the build directory and the symRoot
-        String symRootValue = null;
-        FilePath buildDirectory;
-        if (!StringUtils.isEmpty(symRoot)) {
-          // If not empty we use the Token Expansion to replace it
-          // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-          try {
-            symRootValue = TokenMacro.expandAll(build, listener, symRoot).trim();
-            buildDirectory = new FilePath(projectRoot.getChannel(),symRootValue).child(configuration + "-iphoneos");
-          } catch (MacroEvaluationException e) {
-            listener.error(Messages.XCodeBuilder_symRootMacroError(e.getMessage()));
+        // Infer as best we can the build platform
+        String buildPlatform = "iphoneos";
+		if (!StringUtils.isEmpty(sdk)){
+			if (sdk.toLowerCase().indexOf("iphonesimulator") != -1){
+				// Building for the simulator
+				buildPlatform = "iphonesimulator";
+			}
+		}
 
-            return false;
-          }
-        } else {
-            buildDirectory = projectRoot.child("build").child(configuration + "-iphoneos");
-        }
+        // Set the build directory and the symRoot
+		//
+		String symRootValue = null;
+		String configurationBuildDirValue = null;
+		FilePath buildDirectory;
+		if (!StringUtils.isEmpty(symRoot)) {
+		try {
+		// If not empty we use the Token Expansion to replace it
+		  // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
+		    symRootValue = TokenMacro.expandAll(build, listener, symRoot).trim();
+		  } catch (MacroEvaluationException e) {
+		    listener.error(Messages.XCodeBuilder_symRootMacroError(e.getMessage()));
+		    return false;
+		  }
+		}
+		if (!StringUtils.isEmpty(configurationBuildDir)) {
+		try {
+		    configurationBuildDirValue = TokenMacro.expandAll(build, listener, symRoot).trim();
+		  } catch (MacroEvaluationException e) {
+		    listener.error(Messages.XCodeBuilder_configurationBuildDirMacroError(e.getMessage()));
+		    return false;
+		  }
+		}
+
+
+		if (symRootValue != null){
+			// If there is a SYMROOT specified, build the build directory from that.
+			buildDirectory = new FilePath(projectRoot.getChannel(),symRootValue).child(configuration + "-" + buildPlatform);
+		} else if (configurationBuildDirValue != null){
+			// If there is a CONFIGURATION_BUILD_DIR, that overrides any use of SYMROOT. Does not require the build platform.
+			buildDirectory = new FilePath(projectRoot.getChannel(),configurationBuildDirValue).child(configuration);
+		} else {
+			// Assume its a build for the handset, not the simulator. 
+			buildDirectory = projectRoot.child("build").child(configuration + "-" + buildPlatform);
+		}
+		//
+
 
         // XCode Version
         int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getXcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
@@ -281,6 +312,14 @@ public class XCodeBuilder extends Builder {
         } else {
             xcodeReport.append(", symRoot: DEFAULT");
         }
+		
+		// CONFIGURATION_BUILD_DIR
+		if (!StringUtils.isEmpty(configurationBuildDirValue)) {
+		    commandLine.add("CONFIGURATION_BUILD_DIR="+configurationBuildDirValue);
+		    xcodeReport.append(", configurationBuildDir: ").append(configurationBuildDirValue);
+		} else {
+		    xcodeReport.append(", configurationBuildDir: DEFAULT");
+		}
 
         listener.getLogger().println(xcodeReport.toString());
         returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();

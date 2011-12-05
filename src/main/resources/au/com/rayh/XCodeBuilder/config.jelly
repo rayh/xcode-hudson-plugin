@@ -81,6 +81,11 @@
         <f:textbox />
     </f:entry>
 
+	<f:entry title="Build output directory" field="configurationBuildDir"
+      description="Directory where Xcode will put the build product, overriding the project setting. (CONFIGURATION_BUILD_DIR)">
+        <f:textbox/>
+    </f:entry>
+
     <f:entry title="${%Unlock Keychain?}" field="unlockKeychain">
         <f:checkbox />
     </f:entry>
