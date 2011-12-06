@@ -53,22 +53,39 @@ import java.util.List;
  * @author Ray Hilton
  */
 public class XCodeBuilder extends Builder {
+    /** @since 1.0 */
     public final Boolean cleanBeforeBuild;
+    /** @since 1.0 */
     public final String configuration;
+    /** @since 1.0 */
     public final String target;
+    /** @since 1.0 */
     public final String sdk;
+    /** @since 1.1 */
     public final String symRoot;
+    /** @since 1.2 */
     public final String configurationBuildDir;
+    /** @since 1.0 */
     public final String xcodeProjectPath;
+    /** @since 1.0 */
     public final String xcodeProjectFile;
+    /** @since 1.2 */
     public final String xcodeSchema;
+    /** @since 1.2 */
     public final String xcodeWorkspaceFile;
+    /** @since 1.0 */
     public final String embeddedProfileFile;
+    /** @since 1.0 */
     public final String cfBundleVersionValue;
+    /** @since 1.0 */
     public final String cfBundleShortVersionStringValue;
+    /** @since 1.0 */
     public final Boolean buildIpa;
+    /** @since 1.0 */
     public final Boolean unlockKeychain;
+    /** @since 1.0 */
     public final String keychainPath;
+    /** @since 1.0 */
     public final String keychainPwd;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
