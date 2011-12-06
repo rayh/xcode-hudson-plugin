@@ -89,9 +89,6 @@ public class XCodeBuilder extends Builder {
     public final String keychainPwd;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
-    /**
-     * @since 1.2
-     */
     @DataBoundConstructor
     public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir) {
         this.buildIpa = buildIpa;
@@ -111,25 +108,6 @@ public class XCodeBuilder extends Builder {
         this.keychainPwd = keychainPwd;
         this.symRoot = symRoot;
         this.configurationBuildDir = configurationBuildDir;
-    }
-
-    // We need to keep as long as possible all constructors
-    // from previous released versions to ensure a good
-    // backward compatibility for users
-    /**
-     * @since 1.1
-     */
-    @Deprecated
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot) {
-        this(buildIpa,cleanBeforeBuild,configuration,target,sdk,xcodeProjectPath,xcodeProjectFile,embeddedProfileFile,cfBundleVersionValue,cfBundleShortVersionStringValue,unlockKeychain,keychainPath,keychainPwd,null,null,null,null);
-    }
-
-    /**
-     * @since 1.0
-     */
-    @Deprecated
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd) {
-        this(buildIpa,cleanBeforeBuild,configuration,target,sdk,xcodeProjectPath,xcodeProjectFile,embeddedProfileFile,cfBundleVersionValue,cfBundleShortVersionStringValue,unlockKeychain,keychainPath,keychainPwd,null,null,null,null);
     }
 
     @Override
