@@ -58,6 +58,7 @@ public class XCodeBuilder extends Builder {
     public final String target;
     public final String sdk;
     public final String symRoot;
+    public final String configurationBuildDir;
     public final String xcodeProjectPath;
     public final String xcodeProjectFile;
     public final String xcodeSchema;
@@ -65,7 +66,6 @@ public class XCodeBuilder extends Builder {
     public final String embeddedProfileFile;
     public final String cfBundleVersionValue;
     public final String cfBundleShortVersionStringValue;
-    public final String xcodeBuildOutput;
     public final Boolean buildIpa;
     public final Boolean unlockKeychain;
     public final String keychainPath;
@@ -73,10 +73,10 @@ public class XCodeBuilder extends Builder {
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     /**
-     * @since 1.1
+     * @since 1.2
      */
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodeWorkspaceFile, String xcodeSchema, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, String xcodeBuildOutput, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
@@ -89,16 +89,30 @@ public class XCodeBuilder extends Builder {
         this.embeddedProfileFile = embeddedProfileFile;
         this.cfBundleVersionValue = cfBundleVersionValue;
         this.cfBundleShortVersionStringValue = cfBundleShortVersionStringValue;
-        this.xcodeBuildOutput = xcodeBuildOutput;
         this.unlockKeychain = unlockKeychain;
         this.keychainPath = keychainPath;
         this.keychainPwd = keychainPwd;
         this.symRoot = symRoot;
+        this.configurationBuildDir = configurationBuildDir;
     }
 
+    // We need to keep as long as possible all constructors
+    // from previous released versions to ensure a good
+    // backward compatibility for users
+    /**
+     * @since 1.1
+     */
+    @Deprecated
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot) {
+        this(buildIpa,cleanBeforeBuild,configuration,target,sdk,xcodeProjectPath,xcodeProjectFile,embeddedProfileFile,cfBundleVersionValue,cfBundleShortVersionStringValue,unlockKeychain,keychainPath,keychainPwd,null,null,null,null);
+    }
+
+    /**
+     * @since 1.0
+     */
     @Deprecated
     public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd) {
-        this(buildIpa,cleanBeforeBuild,configuration,target,sdk,xcodeProjectPath,xcodeProjectFile,embeddedProfileFile,null, null, cfBundleVersionValue,cfBundleShortVersionStringValue,null, unlockKeychain,keychainPath,keychainPwd,null);
+        this(buildIpa,cleanBeforeBuild,configuration,target,sdk,xcodeProjectPath,xcodeProjectFile,embeddedProfileFile,cfBundleVersionValue,cfBundleShortVersionStringValue,unlockKeychain,keychainPath,keychainPwd,null,null,null,null);
     }
 
     @Override
@@ -122,23 +136,50 @@ public class XCodeBuilder extends Builder {
         }
         listener.getLogger().println(Messages.XCodeBuilder_workingDir(projectRoot));
 
-        // Set the build directory and the symRoot
-        String symRootValue = null;
-        FilePath buildDirectory;
-        if (!StringUtils.isEmpty(symRoot)) {
-          // If not empty we use the Token Expansion to replace it
-          // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-          try {
-            symRootValue = TokenMacro.expandAll(build, listener, symRoot).trim();
-            buildDirectory = new FilePath(projectRoot.getChannel(),symRootValue).child(configuration + "-iphoneos");
-          } catch (MacroEvaluationException e) {
-            listener.error(Messages.XCodeBuilder_symRootMacroError(e.getMessage()));
+        // Infer as best we can the build platform
+        String buildPlatform = "iphoneos";
+		if (!StringUtils.isEmpty(sdk)){
+			if (StringUtils.contains(sdk.toLowerCase(),"iphonesimulator")){
+				// Building for the simulator
+				buildPlatform = "iphonesimulator";
+			}
+		}
 
-            return false;
-          }
-        } else {
-            buildDirectory = projectRoot.child("build").child(configuration + "-iphoneos");
-        }
+        // Set the build directory and the symRoot
+		//
+		String symRootValue = null;
+		if (!StringUtils.isEmpty(symRoot)) {
+		try {
+		// If not empty we use the Token Expansion to replace it
+		  // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
+		    symRootValue = TokenMacro.expandAll(build, listener, symRoot).trim();
+		  } catch (MacroEvaluationException e) {
+		    listener.error(Messages.XCodeBuilder_symRootMacroError(e.getMessage()));
+		    return false;
+		  }
+		}
+
+        String configurationBuildDirValue = null;
+   		FilePath buildDirectory;
+		if (!StringUtils.isEmpty(configurationBuildDir)) {
+		try {
+		    configurationBuildDirValue = TokenMacro.expandAll(build, listener, configurationBuildDir).trim();
+		  } catch (MacroEvaluationException e) {
+		    listener.error(Messages.XCodeBuilder_configurationBuildDirMacroError(e.getMessage()));
+		    return false;
+		  }
+		}
+
+        if (configurationBuildDirValue != null){
+            // If there is a CONFIGURATION_BUILD_DIR, that overrides any use of SYMROOT. Does not require the build platform.
+            buildDirectory = new FilePath(projectRoot.getChannel(),configurationBuildDirValue).child(configuration);
+		} else if (symRootValue != null){
+            // If there is a SYMROOT specified, compute the build directory from that.
+            buildDirectory = new FilePath(projectRoot.getChannel(),symRootValue).child(configuration + "-" + buildPlatform);
+		} else {
+			// Assume its a build for the handset, not the simulator. 
+			buildDirectory = projectRoot.child("build").child(configuration + "-" + buildPlatform);
+		}
 
         // XCode Version
         int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getXcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
@@ -160,6 +201,7 @@ public class XCodeBuilder extends Builder {
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringNotFound());
         else
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringFound(cfBundleShortVersionString));
+        listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringValue(cfBundleShortVersionString));
 
         // Try to read CFBundleVersion from project
         listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleVersion());
@@ -172,8 +214,6 @@ public class XCodeBuilder extends Builder {
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionNotFound());
         else
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionFound(cfBundleShortVersionString));
-
-        listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringValue(cfBundleShortVersionString));
         listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionValue(cfBundleVersion));
 
         // Update the Marketing version (CFBundleShortVersionString)
@@ -190,6 +230,7 @@ public class XCodeBuilder extends Builder {
                 }
             } catch (MacroEvaluationException e) {
                 listener.fatalError(Messages.XCodeBuilder_CFBundleShortVersionStringMacroError(e.getMessage()));
+                // Fails the build
                 return false;
             }
         }
@@ -223,7 +264,7 @@ public class XCodeBuilder extends Builder {
         }
 
         // remove test-reports and *.ipa
-        listener.getLogger().println(Messages.XCodeBuilder_cleaningTestReportsDir());
+        listener.getLogger().println(Messages.XCodeBuilder_cleaningTestReportsDir(projectRoot.child("test-reports")));
         projectRoot.child("test-reports").deleteRecursive();
 
         if (unlockKeychain) {
@@ -245,7 +286,7 @@ public class XCodeBuilder extends Builder {
         XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(projectRoot, listener);
         List<String> commandLine = Lists.newArrayList(getDescriptor().getXcodebuildPath());
 
-        // Priritizing schemaa over target setting
+        // Prioritizing schema over target setting
         if(!StringUtils.isEmpty(xcodeSchema)) {
             commandLine.add("-scheme");
             commandLine.add(xcodeSchema);
@@ -298,11 +339,14 @@ public class XCodeBuilder extends Builder {
         } else {
             xcodeReport.append(", symRoot: DEFAULT");
         }
-
-		if (!StringUtils.isEmpty(xcodeBuildOutput)) {
-            commandLine.add("CONFIGURATION_BUILD_DIR=" + xcodeBuildOutput);
-            xcodeReport.append(", output directory: ").append(xcodeBuildOutput);
-        }
+		
+		// CONFIGURATION_BUILD_DIR
+		if (!StringUtils.isEmpty(configurationBuildDirValue)) {
+		    commandLine.add("CONFIGURATION_BUILD_DIR="+configurationBuildDirValue);
+		    xcodeReport.append(", configurationBuildDir: ").append(configurationBuildDirValue);
+		} else {
+		    xcodeReport.append(", configurationBuildDir: DEFAULT");
+		}
 
         listener.getLogger().println(xcodeReport.toString());
         returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();
@@ -322,9 +366,9 @@ public class XCodeBuilder extends Builder {
             List<FilePath> apps = buildDirectory.list(new AppFileFilter());
 
             for (FilePath app : apps) {
-                String version = "";
+                String version;
                 if (cfBundleShortVersionString.isEmpty() && cfBundleVersion.isEmpty())
-                    version = "" + build.getNumber();
+                    version = Integer.toString(build.getNumber());
                 else if (cfBundleVersion.isEmpty())
                     version = cfBundleShortVersionString;
                 else
@@ -339,7 +383,6 @@ public class XCodeBuilder extends Builder {
                 payload.deleteRecursive();
                 payload.mkdirs();
 
-
                 listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation);
                 List<String> packageCommandLine = new ArrayList<String>();
                 packageCommandLine.add(getDescriptor().getXcrunPath());
@@ -348,7 +391,7 @@ public class XCodeBuilder extends Builder {
                 if (!StringUtils.isEmpty(sdk)) {
                     packageCommandLine.add(sdk);
                 } else {
-                    packageCommandLine.add("iphoneos");
+                    packageCommandLine.add(buildPlatform);
                 }
                 packageCommandLine.addAll(Lists.newArrayList("PackageApplication", "-v", app.getRemote(), "-o", ipaLocation.getRemote()));
                 if (!StringUtils.isEmpty(embeddedProfileFile)) {

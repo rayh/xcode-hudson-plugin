@@ -38,6 +38,11 @@
         <f:textbox/>
     </f:entry>
 
+    <f:entry title="${%Xcode Schema File}" field="xcodeSchema"
+      description="Only needed if you want to compile for a specific schema instead of a target. It takes precedence over 'Xcode Configuration' setting.">
+        <f:textbox />
+    </f:entry>
+
     <f:entry title="${%SDK}" field="sdk"
       description="Leave empty for default SDK">
         <f:textbox/>
@@ -52,6 +57,11 @@
         <f:textbox default="Release"/>
     </f:entry>
 
+    <f:entry title="${%Xcode Workspace File}" field="xcodeWorkspaceFile"
+      description="Only needed if you want to compile a workspace instead of a project. It takes precedence over 'Xcode Project File' setting.">
+        <f:textbox />
+    </f:entry>
+
     <f:entry title="${%Xcode Project Directory}" field="xcodeProjectPath"
       description="Relative path within the workspace that contains the xcode project file(s).  Only needed if project file is not in the workspace root.">
         <f:textbox />
@@ -62,14 +72,9 @@
         <f:textbox />
     </f:entry>
 
-    <f:entry title="Xcode Workspace File" field="xcodeWorkspaceFile"
-      description="Only needed if you want to compile a workspace instead of a project. It takes precedence over 'Xcode Project File' setting.">
-        <f:textbox />
-    </f:entry>
-
-    <f:entry title="Xcode Schema File" field="xcodeSchema"
-      description="Only needed if you want to compile for a specific schema instead of a target. It takes precedence over 'Xcode Configuration' setting.">
-        <f:textbox />
+    <f:entry title="${%Build output directory}" field="configurationBuildDir"
+         description="Directory where Xcode will put the build product, overriding the project setting. (CONFIGURATION_BUILD_DIR)">
+           <f:textbox/>
     </f:entry>
 
     <f:entry title="${%Marketing version}" field="cfBundleShortVersionStringValue"
@@ -80,11 +85,6 @@
     <f:entry title="${%Technical version}" field="cfBundleVersionValue"
       description="The value to use for CFBundleVersion. Leave blank to use project's technical number.">
         <f:textbox />
-    </f:entry>
-
-    <f:entry title="Build output directory" field="xcodeBuildOutput"
-      description="Directory where Xcode will put the build product, overriding the project setting.">
-        <f:textbox/>
     </f:entry>
 
     <f:entry title="${%Build IPA?}" field="buildIpa">
