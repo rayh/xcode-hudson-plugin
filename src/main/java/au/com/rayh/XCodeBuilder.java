@@ -166,8 +166,8 @@ public class XCodeBuilder extends Builder {
 		}
 
         if (configurationBuildDirValue != null){
-            // If there is a CONFIGURATION_BUILD_DIR, that overrides any use of SYMROOT. Does not require the build platform.
-            buildDirectory = new FilePath(projectRoot.getChannel(),configurationBuildDirValue).child(configuration);
+            // If there is a CONFIGURATION_BUILD_DIR, that overrides any use of SYMROOT. Does not require the build platform and the configuration.
+            buildDirectory = new FilePath(projectRoot.getChannel(),configurationBuildDirValue);
 		} else if (symRootValue != null){
             // If there is a SYMROOT specified, compute the build directory from that.
             buildDirectory = new FilePath(projectRoot.getChannel(),symRootValue).child(configuration + "-" + buildPlatform);
