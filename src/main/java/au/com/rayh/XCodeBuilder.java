@@ -254,12 +254,12 @@ public class XCodeBuilder extends Builder {
 
         // Clean build directories
         if (cleanBeforeBuild) {
-            listener.getLogger().println(Messages.XCodeBuilder_cleaningBuildDir(projectRoot.child("build")));
+            listener.getLogger().println(Messages.XCodeBuilder_cleaningBuildDir(projectRoot.child("build").absolutize().getRemote()));
             buildDirectory.deleteRecursive();
         }
 
         // remove test-reports and *.ipa
-        listener.getLogger().println(Messages.XCodeBuilder_cleaningTestReportsDir(projectRoot.child("test-reports")));
+        listener.getLogger().println(Messages.XCodeBuilder_cleaningTestReportsDir(projectRoot.child("test-reports").absolutize().getRemote()));
         projectRoot.child("test-reports").deleteRecursive();
 
         if (unlockKeychain) {
@@ -378,7 +378,7 @@ public class XCodeBuilder extends Builder {
                 payload.deleteRecursive();
                 payload.mkdirs();
 
-                listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation);
+                listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation.absolutize().getRemote());
                 List<String> packageCommandLine = new ArrayList<String>();
                 packageCommandLine.add(getDescriptor().getXcrunPath());
                 packageCommandLine.add("-sdk");
@@ -388,7 +388,7 @@ public class XCodeBuilder extends Builder {
                 } else {
                     packageCommandLine.add(buildPlatform);
                 }
-                packageCommandLine.addAll(Lists.newArrayList("PackageApplication", "-v", app.getRemote(), "-o", ipaLocation.getRemote()));
+                packageCommandLine.addAll(Lists.newArrayList("PackageApplication", "-v", app.absolutize().getRemote(), "-o", ipaLocation.absolutize().getRemote()));
                 if (!StringUtils.isEmpty(embeddedProfileFile)) {
                     packageCommandLine.add("--embed");
                     packageCommandLine.add(embeddedProfileFile);
@@ -396,12 +396,12 @@ public class XCodeBuilder extends Builder {
 
                 returnCode = launcher.launch().envs(envs).stdout(listener).pwd(projectRoot).cmds(packageCommandLine).join();
                 if (returnCode > 0) {
-                    listener.getLogger().println("Failed to build " + ipaLocation.getName());
+                    listener.getLogger().println("Failed to build " + ipaLocation.absolutize().getRemote());
                     continue;
                 }
 
                 // also zip up the symbols, if present
-                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("zip", "-r", "-T", "-y", baseName + "-dSYM.zip", app.getBaseName() + ".app.dSYM").join();
+                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("zip", "-r", "-T", "-y", baseName + "-dSYM.zip", app.absolutize().getRemote() + ".app.dSYM").join();
                 if (returnCode > 0) {
                     listener.getLogger().println(Messages.XCodeBuilder_zipFailed(baseName));
                     continue;
