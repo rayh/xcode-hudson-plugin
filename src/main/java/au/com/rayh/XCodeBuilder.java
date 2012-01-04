@@ -288,7 +288,7 @@ public class XCodeBuilder extends Builder {
 
         // Clean build directories
         if (cleanBeforeBuild) {
-            listener.getLogger().println(Messages.XCodeBuilder_cleaningBuildDir(projectRoot.child("build").absolutize().getRemote()));
+            listener.getLogger().println(Messages.XCodeBuilder_cleaningBuildDir(buildDirectory.absolutize().getRemote()));
             buildDirectory.deleteRecursive();
         }
 
