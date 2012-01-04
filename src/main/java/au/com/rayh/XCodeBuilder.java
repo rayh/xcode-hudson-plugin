@@ -53,39 +53,73 @@ import java.util.List;
  * @author Ray Hilton
  */
 public class XCodeBuilder extends Builder {
-    /** @since 1.0 */
+    /**
+     * @since 1.0
+     */
     public final Boolean cleanBeforeBuild;
-    /** @since 1.0 */
+    /**
+     * @since 1.0
+     */
     public final String configuration;
-    /** @since 1.0 */
+    /**
+     * @since 1.0
+     */
     public final String target;
-    /** @since 1.0 */
+    /**
+     * @since 1.0
+     */
     public final String sdk;
-    /** @since 1.1 */
+    /**
+     * @since 1.1
+     */
     public final String symRoot;
-    /** @since 1.2 */
+    /**
+     * @since 1.2
+     */
     public final String configurationBuildDir;
-    /** @since 1.0 */
+    /**
+     * @since 1.0
+     */
     public final String xcodeProjectPath;
-    /** @since 1.0 */
+    /**
+     * @since 1.0
+     */
     public final String xcodeProjectFile;
-    /** @since 1.2 */
+    /**
+     * @since 1.2
+     */
     public final String xcodeSchema;
-    /** @since 1.2 */
+    /**
+     * @since 1.2
+     */
     public final String xcodeWorkspaceFile;
-    /** @since 1.0 */
+    /**
+     * @since 1.0
+     */
     public final String embeddedProfileFile;
-    /** @since 1.0 */
+    /**
+     * @since 1.0
+     */
     public final String cfBundleVersionValue;
-    /** @since 1.0 */
+    /**
+     * @since 1.0
+     */
     public final String cfBundleShortVersionStringValue;
-    /** @since 1.0 */
+    /**
+     * @since 1.0
+     */
     public final Boolean buildIpa;
-    /** @since 1.0 */
+    /**
+     * @since 1.0
+     */
     public final Boolean unlockKeychain;
-    /** @since 1.0 */
+    /**
+     * @since 1.0
+     */
     public final String keychainPath;
-    /** @since 1.0 */
+    /**
+     * @since 1.0
+     */
     public final String keychainPwd;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
@@ -133,48 +167,48 @@ public class XCodeBuilder extends Builder {
 
         // Infer as best we can the build platform
         String buildPlatform = "iphoneos";
-		if (!StringUtils.isEmpty(sdk)){
-			if (StringUtils.contains(sdk.toLowerCase(),"iphonesimulator")){
-				// Building for the simulator
-				buildPlatform = "iphonesimulator";
-			}
-		}
+        if (!StringUtils.isEmpty(sdk)) {
+            if (StringUtils.contains(sdk.toLowerCase(), "iphonesimulator")) {
+                // Building for the simulator
+                buildPlatform = "iphonesimulator";
+            }
+        }
 
         // Set the build directory and the symRoot
-		//
-		String symRootValue = null;
-		if (!StringUtils.isEmpty(symRoot)) {
-		try {
-		// If not empty we use the Token Expansion to replace it
-		  // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
-		    symRootValue = TokenMacro.expandAll(build, listener, symRoot).trim();
-		  } catch (MacroEvaluationException e) {
-		    listener.error(Messages.XCodeBuilder_symRootMacroError(e.getMessage()));
-		    return false;
-		  }
-		}
+        //
+        String symRootValue = null;
+        if (!StringUtils.isEmpty(symRoot)) {
+            try {
+                // If not empty we use the Token Expansion to replace it
+                // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
+                symRootValue = TokenMacro.expandAll(build, listener, symRoot).trim();
+            } catch (MacroEvaluationException e) {
+                listener.error(Messages.XCodeBuilder_symRootMacroError(e.getMessage()));
+                return false;
+            }
+        }
 
         String configurationBuildDirValue = null;
-   		FilePath buildDirectory;
-		if (!StringUtils.isEmpty(configurationBuildDir)) {
-		try {
-		    configurationBuildDirValue = TokenMacro.expandAll(build, listener, configurationBuildDir).trim();
-		  } catch (MacroEvaluationException e) {
-		    listener.error(Messages.XCodeBuilder_configurationBuildDirMacroError(e.getMessage()));
-		    return false;
-		  }
-		}
+        FilePath buildDirectory;
+        if (!StringUtils.isEmpty(configurationBuildDir)) {
+            try {
+                configurationBuildDirValue = TokenMacro.expandAll(build, listener, configurationBuildDir).trim();
+            } catch (MacroEvaluationException e) {
+                listener.error(Messages.XCodeBuilder_configurationBuildDirMacroError(e.getMessage()));
+                return false;
+            }
+        }
 
-        if (configurationBuildDirValue != null){
+        if (configurationBuildDirValue != null) {
             // If there is a CONFIGURATION_BUILD_DIR, that overrides any use of SYMROOT. Does not require the build platform and the configuration.
-            buildDirectory = new FilePath(projectRoot.getChannel(),configurationBuildDirValue);
-		} else if (symRootValue != null){
+            buildDirectory = new FilePath(projectRoot.getChannel(), configurationBuildDirValue);
+        } else if (symRootValue != null) {
             // If there is a SYMROOT specified, compute the build directory from that.
-            buildDirectory = new FilePath(projectRoot.getChannel(),symRootValue).child(configuration + "-" + buildPlatform);
-		} else {
-			// Assume its a build for the handset, not the simulator. 
-			buildDirectory = projectRoot.child("build").child(configuration + "-" + buildPlatform);
-		}
+            buildDirectory = new FilePath(projectRoot.getChannel(), symRootValue).child(configuration + "-" + buildPlatform);
+        } else {
+            // Assume its a build for the handset, not the simulator.
+            buildDirectory = projectRoot.child("build").child(configuration + "-" + buildPlatform);
+        }
 
         // XCode Version
         int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getXcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
@@ -264,12 +298,12 @@ public class XCodeBuilder extends Builder {
 
         if (unlockKeychain) {
             // Let's unlock the keychain
-            launcher.launch().envs(envs).cmds("/usr/bin/security","list-keychains","-s",keychainPath).stdout(listener).pwd(projectRoot).join();
-            launcher.launch().envs(envs).cmds("/usr/bin/security","login-keychain","-d","user","-s",keychainPath).stdout(listener).pwd(projectRoot).join();
-            if(StringUtils.isEmpty(keychainPwd))
-              returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security","unlock-keychain",keychainPath).stdout(listener).pwd(projectRoot).join();
+            launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
+            launcher.launch().envs(envs).cmds("/usr/bin/security", "login-keychain", "-d", "user", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
+            if (StringUtils.isEmpty(keychainPwd))
+                returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", keychainPath).stdout(listener).pwd(projectRoot).join();
             else
-              returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security","unlock-keychain","-p",keychainPwd,keychainPath).masks(false,false,false,true,false).stdout(listener).pwd(projectRoot).join();
+                returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", "-p", keychainPwd, keychainPath).masks(false, false, false, true, false).stdout(listener).pwd(projectRoot).join();
             if (returnCode > 0) {
                 listener.fatalError(Messages.XCodeBuilder_unlockKeychainFailed());
                 return false;
@@ -282,7 +316,7 @@ public class XCodeBuilder extends Builder {
         List<String> commandLine = Lists.newArrayList(getDescriptor().getXcodebuildPath());
 
         // Prioritizing schema over target setting
-        if(!StringUtils.isEmpty(xcodeSchema)) {
+        if (!StringUtils.isEmpty(xcodeSchema)) {
             commandLine.add("-scheme");
             commandLine.add(xcodeSchema);
             xcodeReport.append(", scheme: ").append(xcodeSchema);
@@ -329,19 +363,19 @@ public class XCodeBuilder extends Builder {
         commandLine.add("build");
 
         if (!StringUtils.isEmpty(symRootValue)) {
-            commandLine.add("SYMROOT="+symRootValue);
+            commandLine.add("SYMROOT=" + symRootValue);
             xcodeReport.append(", symRoot: ").append(symRootValue);
         } else {
             xcodeReport.append(", symRoot: DEFAULT");
         }
-		
-		// CONFIGURATION_BUILD_DIR
-		if (!StringUtils.isEmpty(configurationBuildDirValue)) {
-		    commandLine.add("CONFIGURATION_BUILD_DIR="+configurationBuildDirValue);
-		    xcodeReport.append(", configurationBuildDir: ").append(configurationBuildDirValue);
-		} else {
-		    xcodeReport.append(", configurationBuildDir: DEFAULT");
-		}
+
+        // CONFIGURATION_BUILD_DIR
+        if (!StringUtils.isEmpty(configurationBuildDirValue)) {
+            commandLine.add("CONFIGURATION_BUILD_DIR=" + configurationBuildDirValue);
+            xcodeReport.append(", configurationBuildDir: ").append(configurationBuildDirValue);
+        } else {
+            xcodeReport.append(", configurationBuildDir: DEFAULT");
+        }
 
         listener.getLogger().println(xcodeReport.toString());
         returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();
@@ -481,16 +515,16 @@ public class XCodeBuilder extends Builder {
         }
 
         public void setXcodebuildPath(String xcodebuildPath) {
-          this.xcodebuildPath = xcodebuildPath;
+            this.xcodebuildPath = xcodebuildPath;
         }
 
         public void setAgvtoolPath(String agvtoolPath) {
-          this.agvtoolPath = agvtoolPath;
+            this.agvtoolPath = agvtoolPath;
         }
 
         public void setXcrunPath(String xcrunPath) {
-          this.xcrunPath = xcrunPath;
+            this.xcrunPath = xcrunPath;
         }
-      }
+    }
 }
 
