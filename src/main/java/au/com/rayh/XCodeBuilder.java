@@ -236,7 +236,7 @@ public class XCodeBuilder extends Builder {
         // only use this version number if we found it
         if (returnCode == 0)
             cfBundleShortVersionString = output.toString().trim();
-        if (cfBundleShortVersionString.isEmpty())
+        if (StringUtils.isEmpty(cfBundleShortVersionString))
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringNotFound());
         else
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringFound(cfBundleShortVersionString));
@@ -249,7 +249,7 @@ public class XCodeBuilder extends Builder {
         // only use this version number if we found it
         if (returnCode == 0)
             cfBundleVersion = output.toString().trim();
-        if (cfBundleVersion.isEmpty())
+        if (StringUtils.isEmpty(cfBundleVersion))
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionNotFound());
         else
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionFound(cfBundleShortVersionString));
@@ -420,15 +420,15 @@ public class XCodeBuilder extends Builder {
 
             for (FilePath app : apps) {
                 String version;
-                if (cfBundleShortVersionString.isEmpty() && cfBundleVersion.isEmpty())
+                if (StringUtils.isEmpty(cfBundleShortVersionString) && StringUtils.isEmpty(cfBundleVersion))
                     version = Integer.toString(build.getNumber());
-                else if (cfBundleVersion.isEmpty())
+                else if (StringUtils.isEmpty(cfBundleVersion))
                     version = cfBundleShortVersionString;
                 else
                     version = cfBundleVersion;
 
                 String baseName = app.getBaseName().replaceAll(" ", "_") + "-" +
-                        configuration.replaceAll(" ", "_") + (version.isEmpty() ? "" : "-" + version);
+                        configuration.replaceAll(" ", "_") + (StringUtils.isEmpty(version) ? "" : "-" + version);
 
                 FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
 
