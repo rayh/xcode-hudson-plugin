@@ -58,7 +58,7 @@ public class XCodeBuilder extends Builder {
      */
     public final Boolean cleanBeforeBuild;
     /**
-     * @since TODO
+     * @since 1.3
      */
     public final Boolean cleanTestReports;
     /**
@@ -90,7 +90,7 @@ public class XCodeBuilder extends Builder {
      */
     public final String xcodeProjectFile;
     /**
-     * @since TODO
+     * @since 1.3
      */
     private String xcodebuildArguments;
     /**
