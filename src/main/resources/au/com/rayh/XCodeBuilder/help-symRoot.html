@@ -22,11 +22,14 @@
   ~ THE SOFTWARE.
   -->
 
-<!--
-  This view is used to render the plugin list page.
-
-  Since we don't really have anything dynamic here, let's just use static HTML. 
--->
 <div>
-  This plugin provides builders to build xcode projects, invoke agvtool and package .ipa files
+    <p>
+        You only need to supply this value if you want to specify the SYMROOT path to use.<br/>
+        If empty, the default SYMROOT path will be used (it could be different depending of your Xcode version).<br/>
+        Supports all macros and also environment and <a href="http://ci.jenkins-ci.org/env-vars.html" target="_blank">build
+        variables</a> from the <a href="https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin" target="_blank">Token
+        Macro Plugin</a>.<br/>
+        For example you can use the value : <br/>
+    </p>
+    <pre>${WORKSPACE}/symroot</pre>
 </div>

@@ -1,201 +1,338 @@
+/*
+ * The MIT License
+ *
+ * Copyright (c) 2011 Ray Yamamoto Hilton
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 package au.com.rayh;
+
 import com.google.common.collect.Lists;
 import hudson.EnvVars;
-import hudson.Launcher;
 import hudson.Extension;
 import hudson.FilePath;
-import hudson.util.FormValidation;
+import hudson.Launcher;
 import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
 import hudson.model.AbstractProject;
-import hudson.tasks.Builder;
+import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
+import hudson.tasks.Builder;
+import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.tokenmacro.MacroEvaluationException;
+import org.jenkinsci.plugins.tokenmacro.TokenMacro;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
 
 import javax.servlet.ServletException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * @author Ray Hilton
  */
 public class XCodeBuilder extends Builder {
-    private Boolean buildIpa;
-    private Boolean cleanBeforeBuild;
-    private Boolean cleanTestReports;
-    private Boolean updateBuildNumber;
-    private String configuration;
-    private String overrideMarketingNumber;
-    private String target;
-    private String sdk;
-    private String xcodeProjectPath;
-    private String xcodeProjectFile;
+    /**
+     * @since 1.0
+     */
+    public final Boolean cleanBeforeBuild;
+    /**
+     * @since TODO
+     */
+    public final Boolean cleanTestReports;
+    /**
+     * @since 1.0
+     */
+    public final String configuration;
+    /**
+     * @since 1.0
+     */
+    public final String target;
+    /**
+     * @since 1.0
+     */
+    public final String sdk;
+    /**
+     * @since 1.1
+     */
+    public final String symRoot;
+    /**
+     * @since 1.2
+     */
+    public final String configurationBuildDir;
+    /**
+     * @since 1.0
+     */
+    public final String xcodeProjectPath;
+    /**
+     * @since 1.0
+     */
+    public final String xcodeProjectFile;
+    /**
+     * @since TODO
+     */
     private String xcodebuildArguments;
-    private String embeddedProfileFile;
-    private String versionNumberPattern;
+    /**
+     * @since 1.2
+     */
+    public final String xcodeSchema;
+    /**
+     * @since 1.2
+     */
+    public final String xcodeWorkspaceFile;
+    /**
+     * @since 1.0
+     */
+    public final String embeddedProfileFile;
+    /**
+     * @since 1.0
+     */
+    public final String cfBundleVersionValue;
+    /**
+     * @since 1.0
+     */
+    public final String cfBundleShortVersionStringValue;
+    /**
+     * @since 1.0
+     */
+    public final Boolean buildIpa;
+    /**
+     * @since 1.0
+     */
+    public final Boolean unlockKeychain;
+    /**
+     * @since 1.0
+     */
+    public final String keychainPath;
+    /**
+     * @since 1.0
+     */
+    public final String keychainPwd;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, Boolean updateBuildNumber, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String versionNumberPattern, String overrideMarketingNumber) {
+    public XCodeBuilder(Boolean buildIpa, Boolean cleanBeforeBuild, Boolean cleanTestReports, String configuration, String target, String sdk, String xcodeProjectPath, String xcodeProjectFile, String xcodebuildArguments, String embeddedProfileFile, String cfBundleVersionValue, String cfBundleShortVersionStringValue, Boolean unlockKeychain, String keychainPath, String keychainPwd, String symRoot, String xcodeWorkspaceFile, String xcodeSchema, String configurationBuildDir) {
         this.buildIpa = buildIpa;
         this.sdk = sdk;
         this.target = target;
         this.cleanBeforeBuild = cleanBeforeBuild;
         this.cleanTestReports = cleanTestReports;
-        this.updateBuildNumber = updateBuildNumber;
-        this.overrideMarketingNumber = overrideMarketingNumber;
         this.configuration = configuration;
         this.xcodeProjectPath = xcodeProjectPath;
         this.xcodeProjectFile = xcodeProjectFile;
         this.xcodebuildArguments = xcodebuildArguments;
+        this.xcodeWorkspaceFile = xcodeWorkspaceFile;
+        this.xcodeSchema = xcodeSchema;
         this.embeddedProfileFile = embeddedProfileFile;
-        this.versionNumberPattern = versionNumberPattern;
-    }
-
-    public String getVersionNumberPattern() {
-        return versionNumberPattern;
-    }
-    public String getSdk() {
-        return sdk;
-    }
-
-    public String getTarget() {
-        return target;
-    }
-
-    public String getConfiguration() {
-        return configuration;
-    }
-
-    public Boolean getBuildIpa() {
-        return buildIpa;
-    }
-
-    public Boolean getCleanBeforeBuild() {
-        return cleanBeforeBuild;
-    }
-
-    public Boolean getCleanTestReports() {
-        return cleanTestReports;
-    }
-
-    public Boolean getUpdateBuildNumber() {
-        return updateBuildNumber;
-    }
-
-    public String getOverrideMarketingNumber() {
-        return overrideMarketingNumber;
-    }
-
-    public String getXcodeProjectPath() {
-        return xcodeProjectPath;
-    }
-
-    public String getXcodeProjectFile() {
-        return xcodeProjectFile;
-    }
-
-    public String getXcodebuildArguments() {
-        return xcodebuildArguments;
-    }
-
-    public String getEmbeddedProfileFile() {
-        return embeddedProfileFile;
+        this.cfBundleVersionValue = cfBundleVersionValue;
+        this.cfBundleShortVersionStringValue = cfBundleShortVersionStringValue;
+        this.unlockKeychain = unlockKeychain;
+        this.keychainPath = keychainPath;
+        this.keychainPwd = keychainPwd;
+        this.symRoot = symRoot;
+        this.configurationBuildDir = configurationBuildDir;
     }
 
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         EnvVars envs = build.getEnvironment(listener);
-        FilePath projectRoot = build.getProject().getWorkspace();
+        FilePath projectRoot = build.getWorkspace();
 
         // check that the configured tools exist
-        if(!new FilePath(projectRoot.getChannel(), getDescriptor().xcodebuildPath()).exists()) {
-            listener.fatalError("Cannot find xcodebuild with the configured path {0}", getDescriptor().xcodebuildPath());
+        if (!new FilePath(projectRoot.getChannel(), getDescriptor().getXcodebuildPath()).exists()) {
+            listener.fatalError(Messages.XCodeBuilder_xcodebuildNotFound(getDescriptor().getXcodebuildPath()));
+            return false;
         }
-        if(!new FilePath(projectRoot.getChannel(), getDescriptor().agvtoolPath()).exists()) {
-            listener.fatalError("Cannot find agvtool with the configured path {0}", getDescriptor().agvtoolPath());
+        if (!new FilePath(projectRoot.getChannel(), getDescriptor().getAgvtoolPath()).exists()) {
+            listener.fatalError(Messages.XCodeBuilder_avgtoolNotFound(getDescriptor().getAgvtoolPath()));
+            return false;
         }
 
         // Set the working directory
-        if(!StringUtils.isEmpty(xcodeProjectPath)) {
+        if (!StringUtils.isEmpty(xcodeProjectPath)) {
             projectRoot = projectRoot.child(xcodeProjectPath);
         }
-        listener.getLogger().println("Working directory is " + projectRoot);
-        FilePath buildDirectory = projectRoot.child("build").child(configuration + "-iphoneos");
+        listener.getLogger().println(Messages.XCodeBuilder_workingDir(projectRoot));
+
+        // Infer as best we can the build platform
+        String buildPlatform = "iphoneos";
+        if (!StringUtils.isEmpty(sdk)) {
+            if (StringUtils.contains(sdk.toLowerCase(), "iphonesimulator")) {
+                // Building for the simulator
+                buildPlatform = "iphonesimulator";
+            }
+        }
+
+        // Set the build directory and the symRoot
+        //
+        String symRootValue = null;
+        if (!StringUtils.isEmpty(symRoot)) {
+            try {
+                // If not empty we use the Token Expansion to replace it
+                // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
+                symRootValue = TokenMacro.expandAll(build, listener, symRoot).trim();
+            } catch (MacroEvaluationException e) {
+                listener.error(Messages.XCodeBuilder_symRootMacroError(e.getMessage()));
+                return false;
+            }
+        }
+
+        String configurationBuildDirValue = null;
+        FilePath buildDirectory;
+        if (!StringUtils.isEmpty(configurationBuildDir)) {
+            try {
+                configurationBuildDirValue = TokenMacro.expandAll(build, listener, configurationBuildDir).trim();
+            } catch (MacroEvaluationException e) {
+                listener.error(Messages.XCodeBuilder_configurationBuildDirMacroError(e.getMessage()));
+                return false;
+            }
+        }
+
+        if (configurationBuildDirValue != null) {
+            // If there is a CONFIGURATION_BUILD_DIR, that overrides any use of SYMROOT. Does not require the build platform and the configuration.
+            buildDirectory = new FilePath(projectRoot.getChannel(), configurationBuildDirValue);
+        } else if (symRootValue != null) {
+            // If there is a SYMROOT specified, compute the build directory from that.
+            buildDirectory = new FilePath(projectRoot.getChannel(), symRootValue).child(configuration + "-" + buildPlatform);
+        } else {
+            // Assume its a build for the handset, not the simulator.
+            buildDirectory = projectRoot.child("build").child(configuration + "-" + buildPlatform);
+        }
 
         // XCode Version
-        int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().xcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
-        if(returnCode>0) return false;
-
-        // Unlock keychain
-//        if(!StringUtils.isEmpty(keychainPassword)) {
-//            launcher.launch().envs(envs).cmds("security", "unlock-keychain", "-p", keychainPassword);
-//        }
-
-        // Set build number
-        String artifactVersion = String.valueOf(build.getNumber());
-        String versionNumber = artifactVersion;
-        if(!StringUtils.isEmpty(getVersionNumberPattern())) {
-             versionNumber = getVersionNumberPattern().replaceAll("\\{BUILD_NUMBER\\}", artifactVersion);
+        int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getXcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
+        if (returnCode > 0) {
+            listener.fatalError(Messages.XCodeBuilder_xcodeVersionNotFound());
+            return false; // We fail the build if XCode isn't deployed
         }
 
-        if(updateBuildNumber) {
-            listener.getLogger().println("Updating version number (CFBundleVersion) to " + versionNumber);
-            //ByteArrayOutputStream output = new ByteArrayOutputStream();
-            //returnCode = launcher.launch().envs(envs).cmds("agvtool", "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
-            //if(returnCode>0) {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-            //} else {
-            //    String marketingVersionNumber = output.toString().trim();
-            //    artifactVersion = marketingVersionNumber + "." + build.getNumber();
-            //    listener.getLogger().println("CFBundleShortVersionString is " + marketingVersionNumber + " so new CFBundleVersion will be " + artifactVersion);
-            //}
+        // Try to read CFBundleShortVersionString from project
+        listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleShortVersionString());
+        String cfBundleShortVersionString = "";
+        returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "mvers", "-terse1").stdout(output).pwd(projectRoot).join();
+        // only use this version number if we found it
+        if (returnCode == 0)
+            cfBundleShortVersionString = output.toString().trim();
+        if (cfBundleShortVersionString.isEmpty())
+            listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringNotFound());
+        else
+            listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringFound(cfBundleShortVersionString));
+        listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringValue(cfBundleShortVersionString));
 
-            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-version", "-all", versionNumber ).stdout(listener).pwd(projectRoot).join();
-            if(returnCode>0) {
-                listener.fatalError("Could not set the CFBundleVersion to " + versionNumber);
+        // Try to read CFBundleVersion from project
+        listener.getLogger().println(Messages.XCodeBuilder_fetchingCFBundleVersion());
+        String cfBundleVersion = "";
+        returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "vers", "-terse").stdout(output).pwd(projectRoot).join();
+        // only use this version number if we found it
+        if (returnCode == 0)
+            cfBundleVersion = output.toString().trim();
+        if (cfBundleVersion.isEmpty())
+            listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionNotFound());
+        else
+            listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionFound(cfBundleShortVersionString));
+        listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionValue(cfBundleVersion));
+
+        // Update the Marketing version (CFBundleShortVersionString)
+        if (!StringUtils.isEmpty(cfBundleShortVersionStringValue)) {
+            try {
+                // If not empty we use the Token Expansion to replace it
+                // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
+                cfBundleShortVersionString = TokenMacro.expandAll(build, listener, cfBundleShortVersionStringValue);
+                listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringUpdate(cfBundleShortVersionString));
+                returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "new-marketing-version", cfBundleShortVersionString).stdout(listener).pwd(projectRoot).join();
+                if (returnCode > 0) {
+                    listener.fatalError(Messages.XCodeBuilder_CFBundleShortVersionStringUpdateError(cfBundleShortVersionString));
+                    return false;
+                }
+            } catch (MacroEvaluationException e) {
+                listener.fatalError(Messages.XCodeBuilder_CFBundleShortVersionStringMacroError(e.getMessage()));
+                // Fails the build
+                return false;
             }
-//        } else {
-//            listener.getLogger().println("Fetching marketing version number (CFBundleShortVersionString)");
-//            ByteArrayOutputStream output = new ByteArrayOutputStream();
-//            returnCode = launcher.launch().envs(envs).cmds("agvtool", "vers", "-terse").stdout(output).pwd(projectRoot).join();
-//
-//            // only use this version number if we found it
-//            if(returnCode==0)
-//                artifactVersion = output.toString().trim();
         }
 
-        if( false == StringUtils.isEmpty(overrideMarketingNumber) ) {
-            listener.getLogger().println("Updating marketing version to " + overrideMarketingNumber);
-
-            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-marketing-version", overrideMarketingNumber ).stdout(listener).pwd(projectRoot).join();
-            if(returnCode>0) {
-                listener.fatalError("Could not set marketing version to " + overrideMarketingNumber);
+        // Update the Technical version (CFBundleVersion)
+        if (!StringUtils.isEmpty(cfBundleVersionValue)) {
+            try {
+                // If not empty we use the Token Expansion to replace it
+                // https://wiki.jenkins-ci.org/display/JENKINS/Token+Macro+Plugin
+                cfBundleVersion = TokenMacro.expandAll(build, listener, cfBundleVersionValue);
+                listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionUpdate(cfBundleVersion));
+                returnCode = launcher.launch().envs(envs).cmds(getDescriptor().getAgvtoolPath(), "new-version", "-all", cfBundleVersion).stdout(listener).pwd(projectRoot).join();
+                if (returnCode > 0) {
+                    listener.fatalError(Messages.XCodeBuilder_CFBundleVersionUpdateError(cfBundleVersion));
+                    return false;
+                }
+            } catch (MacroEvaluationException e) {
+                listener.fatalError(Messages.XCodeBuilder_CFBundleVersionMacroError(e.getMessage()));
+                // Fails the build
+                return false;
             }
         }
+
+        listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringUsed(cfBundleShortVersionString));
+        listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionUsed(cfBundleVersion));
 
         // Clean build directories
-        if(cleanBeforeBuild != null && cleanBeforeBuild) {
-            listener.getLogger().println("Cleaning build directory (" + projectRoot.child("build") + ")");
+        if (cleanBeforeBuild) {
+            listener.getLogger().println(Messages.XCodeBuilder_cleaningBuildDir(buildDirectory.absolutize().getRemote()));
             buildDirectory.deleteRecursive();
         }
 
         // remove test-reports and *.ipa
-        if(cleanTestReports != null && cleanTestReports) {
-            listener.getLogger().println("Cleaning up test-reports");
+        if (cleanTestReports != null && cleanTestReports) {
+            listener.getLogger().println(Messages.XCodeBuilder_cleaningTestReportsDir(projectRoot.child("test-reports").absolutize().getRemote()));
             projectRoot.child("test-reports").deleteRecursive();
+		}
+
+        if (unlockKeychain) {
+            // Let's unlock the keychain
+            launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
+            launcher.launch().envs(envs).cmds("/usr/bin/security", "login-keychain", "-d", "user", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
+            if (StringUtils.isEmpty(keychainPwd))
+                returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", keychainPath).stdout(listener).pwd(projectRoot).join();
+            else
+                returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", "-p", keychainPwd, keychainPath).masks(false, false, false, true, false).stdout(listener).pwd(projectRoot).join();
+            if (returnCode > 0) {
+                listener.fatalError(Messages.XCodeBuilder_unlockKeychainFailed());
+                return false;
+            }
         }
 
         // Build
-        StringBuilder xcodeReport = new StringBuilder("Going to invoke xcodebuild: ");
+        StringBuilder xcodeReport = new StringBuilder(Messages.XCodeBuilder_invokeXcodebuild());
         XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(projectRoot, listener);
-        List<String> commandLine = Lists.newArrayList(getDescriptor().xcodebuildPath());
-        if(StringUtils.isEmpty(target)) {
+        List<String> commandLine = Lists.newArrayList(getDescriptor().getXcodebuildPath());
+
+        // Prioritizing schema over target setting
+        if (!StringUtils.isEmpty(xcodeSchema)) {
+            commandLine.add("-scheme");
+            commandLine.add(xcodeSchema);
+            xcodeReport.append(", scheme: ").append(xcodeSchema);
+        } else if (StringUtils.isEmpty(target)) {
             commandLine.add("-alltargets");
             xcodeReport.append("target: ALL");
         } else {
@@ -204,7 +341,7 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append("target: ").append(target);
         }
 
-        if(!StringUtils.isEmpty(sdk)) {
+        if (!StringUtils.isEmpty(sdk)) {
             commandLine.add("-sdk");
             commandLine.add(sdk);
             xcodeReport.append(", sdk: ").append(sdk);
@@ -212,7 +349,12 @@ public class XCodeBuilder extends Builder {
             xcodeReport.append(", sdk: DEFAULT");
         }
 
-        if(!StringUtils.isEmpty(xcodeProjectFile)) {
+        // Prioritizing workspace over project setting
+        if (!StringUtils.isEmpty(xcodeWorkspaceFile)) {
+            commandLine.add("-workspace");
+            commandLine.add(xcodeWorkspaceFile + ".xcworkspace");
+            xcodeReport.append(", workspace: ").append(xcodeWorkspaceFile);
+        } else if (!StringUtils.isEmpty(xcodeProjectFile)) {
             commandLine.add("-project");
             commandLine.add(xcodeProjectFile);
             xcodeReport.append(", project: ").append(xcodeProjectFile);
@@ -224,13 +366,28 @@ public class XCodeBuilder extends Builder {
         commandLine.add(configuration);
         xcodeReport.append(", configuration: ").append(configuration);
 
-//        if (cleanBeforeBuild) {
-//            commandLine.add("clean");
-//            xcodeReport.append(", clean: YES");
-//        } else {
-//            xcodeReport.append(", clean: NO");
-//        }
+        if (cleanBeforeBuild) {
+            commandLine.add("clean");
+            xcodeReport.append(", clean: YES");
+        } else {
+            xcodeReport.append(", clean: NO");
+        }
         commandLine.add("build");
+
+        if (!StringUtils.isEmpty(symRootValue)) {
+            commandLine.add("SYMROOT=" + symRootValue);
+            xcodeReport.append(", symRoot: ").append(symRootValue);
+        } else {
+            xcodeReport.append(", symRoot: DEFAULT");
+        }
+
+        // CONFIGURATION_BUILD_DIR
+        if (!StringUtils.isEmpty(configurationBuildDirValue)) {
+            commandLine.add("CONFIGURATION_BUILD_DIR=" + configurationBuildDirValue);
+            xcodeReport.append(", configurationBuildDir: ").append(configurationBuildDirValue);
+        } else {
+            xcodeReport.append(", configurationBuildDir: DEFAULT");
+        }
 
         // Additional (custom) xcodebuild arguments
         if (!StringUtils.isEmpty(xcodebuildArguments)) {
@@ -242,61 +399,67 @@ public class XCodeBuilder extends Builder {
 
         listener.getLogger().println(xcodeReport.toString());
         returnCode = launcher.launch().envs(envs).cmds(commandLine).stdout(reportGenerator.getOutputStream()).pwd(projectRoot).join();
-        if(reportGenerator.getExitCode()!=0) return false;
-        if(returnCode>0) return false;
+        if (reportGenerator.getExitCode() != 0) return false;
+        if (returnCode > 0) return false;
 
 
         // Package IPA
-        if(buildIpa) {
-            listener.getLogger().println("Cleaning up previously generate .ipa files");
-            for(FilePath path : buildDirectory.list("*.ipa")) {
+        if (buildIpa) {
+
+            listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
+            for (FilePath path : buildDirectory.list("*.ipa")) {
                 path.delete();
             }
 
-            listener.getLogger().println("Packaging IPA");
+            listener.getLogger().println(Messages.XCodeBuilder_packagingIPA());
             List<FilePath> apps = buildDirectory.list(new AppFileFilter());
 
-            for(FilePath app : apps) {
-                String baseName = app.getBaseName() + "-" + configuration + "-" + build.getProject().getName() + "-" + versionNumber;
+            for (FilePath app : apps) {
+                String version;
+                if (cfBundleShortVersionString.isEmpty() && cfBundleVersion.isEmpty())
+                    version = Integer.toString(build.getNumber());
+                else if (cfBundleVersion.isEmpty())
+                    version = cfBundleShortVersionString;
+                else
+                    version = cfBundleVersion;
+
+                String baseName = app.getBaseName().replaceAll(" ", "_") + "-" +
+                        configuration.replaceAll(" ", "_") + (version.isEmpty() ? "" : "-" + version);
+
                 FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
 
                 FilePath payload = buildDirectory.child("Payload");
                 payload.deleteRecursive();
                 payload.mkdirs();
 
-
-                listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation);
+                listener.getLogger().println("Packaging " + app.getBaseName() + ".app => " + ipaLocation.absolutize().getRemote());
                 List<String> packageCommandLine = new ArrayList<String>();
-                packageCommandLine.add("/usr/bin/xcrun");
+                packageCommandLine.add(getDescriptor().getXcrunPath());
                 packageCommandLine.add("-sdk");
 
-                if(!StringUtils.isEmpty(sdk)) {
+                if (!StringUtils.isEmpty(sdk)) {
                     packageCommandLine.add(sdk);
                 } else {
-                    packageCommandLine.add("iphoneos");
+                    packageCommandLine.add(buildPlatform);
                 }
-                packageCommandLine.addAll(Lists.newArrayList("PackageApplication", "-v", app.toString(), "-o", ipaLocation.toString()));
-                if(!StringUtils.isEmpty(embeddedProfileFile)) {
+                packageCommandLine.addAll(Lists.newArrayList("PackageApplication", "-v", app.absolutize().getRemote(), "-o", ipaLocation.absolutize().getRemote()));
+                if (!StringUtils.isEmpty(embeddedProfileFile)) {
                     packageCommandLine.add("--embed");
                     packageCommandLine.add(embeddedProfileFile);
                 }
 
                 returnCode = launcher.launch().envs(envs).stdout(listener).pwd(projectRoot).cmds(packageCommandLine).join();
-                if(returnCode>0) {
-                    listener.getLogger().println("Failed to build " + ipaLocation.getName());
+                if (returnCode > 0) {
+                    listener.getLogger().println("Failed to build " + ipaLocation.absolutize().getRemote());
                     continue;
                 }
 
                 // also zip up the symbols, if present
-                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("zip", "-r", "-T", "-y", baseName + "-dSYM.zip", app.getBaseName() + ".app.dSYM").join();
-                if(returnCode>0) {
-                    listener.getLogger().println("Failed to zip *.dSYM into " + baseName + "-dSYM.zip");
+                returnCode = launcher.launch().envs(envs).stdout(listener).pwd(buildDirectory).cmds("zip", "-r", "-T", "-y", baseName + "-dSYM.zip", app.absolutize().getRemote() + ".dSYM").join();
+                if (returnCode > 0) {
+                    listener.getLogger().println(Messages.XCodeBuilder_zipFailed(baseName));
                     continue;
                 }
-
-                //listener.getLogger().println("Copying to " + app.getBaseName() + ".ipa");
-                //ipaLocation.copyTo(buildDirectory.child(app.getBaseName() + ".ipa"));
-
 
                 payload.deleteRecursive();
             }
@@ -307,37 +470,38 @@ public class XCodeBuilder extends Builder {
 
     @Override
     public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl)super.getDescriptor();
+        return (DescriptorImpl) super.getDescriptor();
     }
 
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
         private String xcodebuildPath = "/usr/bin/xcodebuild";
         private String agvtoolPath = "/usr/bin/agvtool";
-
-        public FormValidation doCheckConfiguration(@QueryParameter String value) throws IOException, ServletException {
-            if (StringUtils.isEmpty(value)) {
-                return FormValidation.error("Please specify a configuration");
-            } else {
-                // TODO: scan project file for specified configuration
-            }
-            return FormValidation.ok();
-        }
+        private String xcrunPath = "/usr/bin/xcrun";
 
         public FormValidation doCheckXcodebuildPath(@QueryParameter String value) throws IOException, ServletException {
             if (StringUtils.isEmpty(value)) {
-                return FormValidation.error("Please specify the path to the xcodebuild executable (usually /usr/bin/xcodebuild)");
+                return FormValidation.error(Messages.XCodeBuilder_xcodebuildPathNotSet());
             } else {
-                // TODO: check that the file exists
+                // TODO: check that the file exists (and if an agent is used ?)
             }
             return FormValidation.ok();
         }
 
         public FormValidation doCheckAgvtoolPath(@QueryParameter String value) throws IOException, ServletException {
-            if(StringUtils.isEmpty(value))
-                return FormValidation.error("Please specify the path to the agvtool executable (usually /usr/bin/agvtool)");
+            if (StringUtils.isEmpty(value))
+                return FormValidation.error(Messages.XCodeBuilder_agvtoolPathNotSet());
             else {
-                // TODO: check that the file exists
+                // TODO: check that the file exists (and if an agent is used ?)
+            }
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckXcrunPath(@QueryParameter String value) throws IOException, ServletException {
+            if (StringUtils.isEmpty(value))
+                return FormValidation.error(Messages.XCodeBuilder_xcrunPathNotSet());
+            else {
+                // TODO: check that the file exists (and if an agent is used ?)
             }
             return FormValidation.ok();
         }
@@ -348,33 +512,39 @@ public class XCodeBuilder extends Builder {
         }
 
         public String getDisplayName() {
-            return "XCode";
+            return Messages.XCodeBuilder_xcode();
         }
 
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-            // To persist global configuration information,
-            // set that to properties and call save().
-//            updateBuildNumber = formData.getBoolean("updateBuildNumber");
-//            buildIpa = formData.getBoolean("buildIpa");
-//            cleanBeforeBuild = formData.getBoolean("cleanBeforeBuild");
-//            configuration = formData.getString("configuration");
-            xcodebuildPath = formData.getString("xcodebuildPath");
-            agvtoolPath = formData.getString("agvtoolPath");
-            // ^Can also use req.bindJSON(this, formData);
-            //  (easier when there are many fields; need set* methods for this, like setUseFrench)
+            req.bindJSON(this, formData);
             save();
             return super.configure(req, formData);
         }
 
-        public String agvtoolPath() {
+        public String getAgvtoolPath() {
             return agvtoolPath;
         }
 
-        public String xcodebuildPath() {
+        public String getXcodebuildPath() {
             return xcodebuildPath;
         }
 
+        public String getXcrunPath() {
+            return xcrunPath;
+        }
+
+        public void setXcodebuildPath(String xcodebuildPath) {
+            this.xcodebuildPath = xcodebuildPath;
+        }
+
+        public void setAgvtoolPath(String agvtoolPath) {
+            this.agvtoolPath = agvtoolPath;
+        }
+
+        public void setXcrunPath(String xcrunPath) {
+            this.xcrunPath = xcrunPath;
+        }
     }
 }
 

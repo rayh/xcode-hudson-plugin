@@ -1,80 +1,127 @@
 
+<!--
+  ~ The MIT License
+  ~
+  ~ Copyright (c) 2011 Ray Yamamoto Hilton
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
+  ~ of this software and associated documentation files (the "Software"), to deal
+  ~ in the Software without restriction, including without limitation the rights
+  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is
+  ~ furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in
+  ~ all copies or substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  ~ THE SOFTWARE.
+  -->
+
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <!--
     This jelly script is used for per-project configuration.
 
     See global.jelly for a general discussion about jelly script.
   -->
-
-    <f:entry title="Target" field="target"
-      description="Leave empty for all targets"
-      help="/plugin/xcode/help-target.html">
-        <f:textbox name="xcode.target" value="${instance.target}" />
+    <f:entry title="${%Clean before build?}" field="cleanBeforeBuild"
+      description="This will delete the build directories before invoking the build.">
+        <f:checkbox/>
     </f:entry>
 
-    <f:entry title="SDK" field="sdk"
-      description="Leave empty for default SDK"
-      help="/plugin/xcode/help-sdk.html">
-        <f:textbox name="xcode.sdk" value="${instance.sdk}" />
+    <f:entry title="${%Target}" field="target"
+      description="Leave empty for all targets">
+        <f:textbox/>
     </f:entry>
 
-    <f:entry title="Configuration" field="configuration"
-      help="/plugin/xcode/help-configuration.html">
-        <f:textbox name="xcode.configuration" value="${instance.configuration}" default="Release"/>
+    <f:entry title="${%Xcode Schema File}" field="xcodeSchema"
+      description="Only needed if you want to compile for a specific schema instead of a target.">
+        <f:textbox />
     </f:entry>
 
-    <f:entry title="Xcode Project Directory" field="xcodeProjectPath"
-      description="Relative path within the workspace that contains the xcode project file(s).  Only needed if project file is not in the workspace root."
-      help="/plugin/xcode/help-xcodeProjectPath.html">
-        <f:textbox name="xcode.xcodeProjectPath" value="${instance.xcodeProjectPath}" />
+    <f:entry title="${%SDK}" field="sdk"
+      description="Leave empty for default SDK">
+        <f:textbox/>
     </f:entry>
 
-    <f:entry title="Xcode Project File" field="xcodeProjectFile"
-      description="Only needed if there is more than one project file in the Xcode Project Directory"
-      help="/plugin/xcode/help-xcodeProjectFile.html">
-        <f:textbox name="xcode.xcodeProjectFile" value="${instance.xcodeProjectFile}" />
+    <f:entry title="${%SYMROOT}" field="symRoot"
+      description="Leave empty for default SYMROOT">
+        <f:textbox/>
     </f:entry>
 
-    <f:entry title="Custom xcodebuild arguments" field="xcodebuildArguments"
+    <f:entry title="${%Configuration}" field="configuration"
+      description="This is the name of the configuration as defined in the XCode project.">
+        <f:textbox default="Release"/>
+    </f:entry>
+
+    <f:entry title="${%Custom xcodebuild arguments}" field="xcodebuildArguments"
       help="/plugin/xcode/help-xcodebuildArguments.html">
         <f:textbox name="xcode.xcodebuildArguments" value="${instance.xcodebuildArguments}" default=""/>
     </f:entry>
 
-    <f:entry title="Update CFBundleVersion with build number?" field="updateBuildNumber"
-      help="/plugin/xcode/help-updateBuildNumber.html">
-        <f:checkbox name="xcode.updateBuildNumber" checked="${instance.updateBuildNumber}" />
+    <f:entry title="${%Xcode Workspace File}" field="xcodeWorkspaceFile"
+      description="Only needed if you want to compile a workspace instead of a project.">
+        <f:textbox />
     </f:entry>
 
-	<f:entry title="New Marketing number" field="overrideMarketingNumber"
-	  description="Leave blank to use projects marketing number."
-	  help="/plugin/xcode/help-updateMarketingNumber.html">
-	  <f:textbox name="xcode.overrideMarketingNumber" value="${instance.overrideMarketingNumber}" />
-	</f:entry>
-
-    <f:entry title="CFBundleVersion pattern" field="versionNumberPattern"
-      description="The pattern for settings the CFBundleVersion.  The value {BUILD_NUMBER} will be replaced with the current build number"
-      help="/plugin/xcode/help-versionNumberPattern.html">
-        <f:textbox name="xcode.versionNumberPattern" value="${instance.versionNumberPattern}" default="{BUILD_NUMBER}"/>
+    <f:entry title="${%Xcode Project Directory}" field="xcodeProjectPath"
+      description="Relative path within the workspace that contains the xcode project file(s).">
+        <f:textbox />
     </f:entry>
 
-    <f:entry title="Clean before build?" field="cleanBeforeBuild"
-      help="/plugin/xcode/help-cleanBeforeBuild.html">
-        <f:checkbox name="xcode.cleanBeforeBuild" checked="${instance.cleanBeforeBuild}" />
+    <f:entry title="${%Xcode Project File}" field="xcodeProjectFile"
+      description="Only needed if there is more than one project file in the Xcode Project Directory">
+        <f:textbox />
     </f:entry>
 
-    <f:entry title="Clean test reports?" field="cleanTestReports"
+    <f:entry title="${%Build output directory}" field="configurationBuildDir"
+         description="The value to use for CONFIGURATION_BUILD_DIR setting.">
+           <f:textbox/>
+    </f:entry>
+
+    <f:entry title="${%Marketing version}" field="cfBundleShortVersionStringValue"
+   	  description="The value to use for CFBundleShortVersionString. Leave blank to use project's marketing number.">
+   	  <f:textbox />
+   	</f:entry>
+
+    <f:entry title="${%Technical version}" field="cfBundleVersionValue"
+      description="The value to use for CFBundleVersion. Leave blank to use project's technical number.">
+        <f:textbox />
+    </f:entry>
+
+    <f:entry title="${%Clean test reports?}" field="cleanTestReports"
       help="/plugin/xcode/help-cleanTestReports.html">
         <f:checkbox name="xcode.cleanTestReports" checked="${instance.cleanTestReports}" />
     </f:entry>
 
-    <f:entry title="Build IPA?" field="buildIpa"
-      help="/plugin/xcode/help-buildIpa.html">
-        <f:checkbox name="xcode.buildIpa" checkbox="${instance.buildIpa}" />
+    <f:entry title="${%Build IPA?}" field="buildIpa"
+      description="Checking this option will create a .ipa for each .app found in the build directory.">
+        <f:checkbox />
     </f:entry>
 
-    <f:entry title="Embedded Profile" field="embeddedProfileFile"
-      description="The relative path to the mobileprovision to embed, leave blank for no embedded profile"
-      help="/plugin/xcode/help-embeddedProfileFile.html">
-        <f:textbox name="xcode.embeddedProfileFile" checkbox="${instance.embeddedProfileFile}" />
+    <f:entry title="${%Embedded Profile}" field="embeddedProfileFile"
+      description="The relative path to the mobileprovision to embed, leave blank for no embedded profile">
+        <f:textbox />
     </f:entry>
+
+    <f:entry title="${%Unlock Keychain?}" field="unlockKeychain"
+      description="Automatically unlock the keychain before signing the archive?">
+        <f:checkbox />
+    </f:entry>
+
+    <f:entry title="${%Keychain path}" field="keychainPath"
+   	  description="The path of the keychain to use to sign the IPA.">
+   	  <f:textbox default="$${HOME}/Library/Keychains/login.keychain"/>
+   	</f:entry>
+
+    <f:entry title="${%Keychain password}" field="keychainPwd"
+   	  description="The password to use to unlock the keychain.">
+   	  <f:password />
+   	</f:entry>
+
 </j:jelly>
