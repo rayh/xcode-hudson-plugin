@@ -386,9 +386,13 @@ public class XCodeBuilder extends Builder {
         // Package IPA
         if (buildIpa) {
 
-            listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
-            for (FilePath path : buildDirectory.list("*.ipa")) {
-                path.delete();
+            if (buildDirectory.exists()) {
+                listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
+                for (FilePath path : buildDirectory.list("*.ipa")) {
+                    path.delete();
+                }
+            } else {
+                listener.getLogger().println(Messages.XCodeBuilder_NotExistingDirToCleanIPA(buildDirectory.absolutize().getRemote()));
             }
 
             listener.getLogger().println(Messages.XCodeBuilder_packagingIPA());
