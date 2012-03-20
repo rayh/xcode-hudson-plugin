@@ -58,7 +58,7 @@ public class XCodeBuilder extends Builder {
      */
     public final Boolean cleanBeforeBuild;
     /**
-     * @since TODO
+     * @since 1.3
      */
     public final Boolean cleanTestReports;
     /**
@@ -90,7 +90,7 @@ public class XCodeBuilder extends Builder {
      */
     public final String xcodeProjectFile;
     /**
-     * @since TODO
+     * @since 1.3
      */
     private String xcodebuildArguments;
     /**
@@ -236,7 +236,7 @@ public class XCodeBuilder extends Builder {
         // only use this version number if we found it
         if (returnCode == 0)
             cfBundleShortVersionString = output.toString().trim();
-        if (cfBundleShortVersionString.isEmpty())
+        if (StringUtils.isEmpty(cfBundleShortVersionString))
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringNotFound());
         else
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleShortVersionStringFound(cfBundleShortVersionString));
@@ -249,7 +249,7 @@ public class XCodeBuilder extends Builder {
         // only use this version number if we found it
         if (returnCode == 0)
             cfBundleVersion = output.toString().trim();
-        if (cfBundleVersion.isEmpty())
+        if (StringUtils.isEmpty(cfBundleVersion))
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionNotFound());
         else
             listener.getLogger().println(Messages.XCodeBuilder_CFBundleVersionFound(cfBundleShortVersionString));
@@ -311,7 +311,7 @@ public class XCodeBuilder extends Builder {
         if (unlockKeychain != null && unlockKeychain) {
             // Let's unlock the keychain
             launcher.launch().envs(envs).cmds("/usr/bin/security", "list-keychains", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
-            launcher.launch().envs(envs).cmds("/usr/bin/security", "login-keychain", "-d", "user", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
+            launcher.launch().envs(envs).cmds("/usr/bin/security", "default-keychain", "-d", "user", "-s", keychainPath).stdout(listener).pwd(projectRoot).join();
             if (StringUtils.isEmpty(keychainPwd))
                 returnCode = launcher.launch().envs(envs).cmds("/usr/bin/security", "unlock-keychain", keychainPath).stdout(listener).pwd(projectRoot).join();
             else
@@ -406,9 +406,13 @@ public class XCodeBuilder extends Builder {
         // Package IPA
         if (buildIpa) {
 
-            listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
-            for (FilePath path : buildDirectory.list("*.ipa")) {
-                path.delete();
+            if (buildDirectory.exists()) {
+                listener.getLogger().println(Messages.XCodeBuilder_cleaningIPA());
+                for (FilePath path : buildDirectory.list("*.ipa")) {
+                    path.delete();
+                }
+            } else {
+                listener.getLogger().println(Messages.XCodeBuilder_NotExistingDirToCleanIPA(buildDirectory.absolutize().getRemote()));
             }
 
             listener.getLogger().println(Messages.XCodeBuilder_packagingIPA());
@@ -416,15 +420,15 @@ public class XCodeBuilder extends Builder {
 
             for (FilePath app : apps) {
                 String version;
-                if (cfBundleShortVersionString.isEmpty() && cfBundleVersion.isEmpty())
+                if (StringUtils.isEmpty(cfBundleShortVersionString) && StringUtils.isEmpty(cfBundleVersion))
                     version = Integer.toString(build.getNumber());
-                else if (cfBundleVersion.isEmpty())
+                else if (StringUtils.isEmpty(cfBundleVersion))
                     version = cfBundleShortVersionString;
                 else
                     version = cfBundleVersion;
 
                 String baseName = app.getBaseName().replaceAll(" ", "_") + "-" +
-                        configuration.replaceAll(" ", "_") + (version.isEmpty() ? "" : "-" + version);
+                        configuration.replaceAll(" ", "_") + (StringUtils.isEmpty(version) ? "" : "-" + version);
 
                 FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
 
