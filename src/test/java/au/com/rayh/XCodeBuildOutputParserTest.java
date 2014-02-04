@@ -1,4 +1,28 @@
 /*
+ * The MIT License
+ *
+ * Copyright (c) 2011 Ray Yamamoto Hilton
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+/*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
@@ -7,17 +31,16 @@ package au.com.rayh;
 
 import au.com.rayh.report.TestCase;
 import au.com.rayh.report.TestSuite;
-import java.io.File;
 import hudson.FilePath;
+import hudson.console.ConsoleNote;
 import hudson.model.TaskListener;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.util.Date;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.*;
+import java.util.Date;
+
 import static org.junit.Assert.*;
 
 /**
@@ -38,6 +61,15 @@ public class XCodeBuildOutputParserTest {
                     throw new RuntimeException(e);
                 }
             }
+
+            public void annotate(ConsoleNote consoleNote) throws IOException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
+            public void hyperlink(String s, String s1) throws IOException {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+
             public PrintWriter error(String string) {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
@@ -114,7 +146,7 @@ public class XCodeBuildOutputParserTest {
         assertNull(parser.currentTestCase);
         assertEquals(1, parser.currentTestSuite.getTestCases().size());
         assertEquals("testThatPasses", parser.currentTestSuite.getTestCases().get(0).getName());
-        assertEquals(1.234, parser.currentTestSuite.getTestCases().get(0).getTime());
+        assertEquals(1.234f, parser.currentTestSuite.getTestCases().get(0).getTime(),0);
         assertEquals(1,parser.currentTestSuite.getTests());
         assertEquals(0,parser.currentTestSuite.getFailures());
     }
@@ -128,7 +160,7 @@ public class XCodeBuildOutputParserTest {
         assertNull(parser.currentTestCase);
         assertEquals(1, parser.currentTestSuite.getTestCases().size());
         assertEquals("testThatFails", parser.currentTestSuite.getTestCases().get(0).getName());
-        assertEquals(1.234, parser.currentTestSuite.getTestCases().get(0).getTime());
+        assertEquals(1.234f, parser.currentTestSuite.getTestCases().get(0).getTime(),0);
         assertEquals(1,parser.currentTestSuite.getTests());
         assertEquals(1,parser.currentTestSuite.getFailures());
     }
