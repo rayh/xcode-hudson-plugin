@@ -56,6 +56,7 @@ public class XCodeBuilder extends Builder {
     public String getVersionNumberPattern() {
         return versionNumberPattern;
     }
+    
     public String getSdk() {
         return sdk;
     }
@@ -100,6 +101,15 @@ public class XCodeBuilder extends Builder {
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         EnvVars envs = build.getEnvironment(listener);
         FilePath projectRoot = build.getProject().getWorkspace();
+        
+        String expanded_versionNumberPattern     = envs.expand(versionNumberPattern);
+    	String expanded_sdk                      = envs.expand(sdk);
+    	String expanded_target                   = envs.expand(target);
+    	String expanded_overrideMarketingNumber  = envs.expand(overrideMarketingNumber);
+    	String expanded_configuration            = envs.expand(configuration);
+    	String expanded_xcodeProjectPath         = envs.expand(xcodeProjectPath);
+    	String expanded_xcodeProjectFile         = envs.expand(xcodeProjectFile);
+    	String expanded_embeddedProfileFile      = envs.expand(embeddedProfileFile);
 
         // check that the configured tools exist
         if(!new FilePath(projectRoot.getChannel(), getDescriptor().xcodebuildPath()).exists()) {
@@ -110,11 +120,11 @@ public class XCodeBuilder extends Builder {
         }
 
         // Set the working directory
-        if(!StringUtils.isEmpty(xcodeProjectPath)) {
-            projectRoot = projectRoot.child(xcodeProjectPath);
+        if(!StringUtils.isEmpty(expanded_xcodeProjectPath)) {
+            projectRoot = projectRoot.child(expanded_xcodeProjectPath);
         }
         listener.getLogger().println("Working directory is " + projectRoot);
-        FilePath buildDirectory = projectRoot.child("build").child(configuration + "-iphoneos");
+        FilePath buildDirectory = projectRoot.child("build").child(expanded_configuration + "-iphoneos");
 
         // XCode Version
         int returnCode = launcher.launch().envs(envs).cmds(getDescriptor().xcodebuildPath(), "-version").stdout(listener).pwd(projectRoot).join();
@@ -128,8 +138,8 @@ public class XCodeBuilder extends Builder {
         // Set build number
         String artifactVersion = String.valueOf(build.getNumber());
         String versionNumber = artifactVersion;
-        if(!StringUtils.isEmpty(getVersionNumberPattern())) {
-             versionNumber = getVersionNumberPattern().replaceAll("\\{BUILD_NUMBER\\}", artifactVersion);
+        if(!StringUtils.isEmpty(expanded_versionNumberPattern)) {
+             versionNumber = expanded_versionNumberPattern.replaceAll("\\{BUILD_NUMBER\\}", artifactVersion);
         }
         
         if(updateBuildNumber) {
@@ -158,12 +168,12 @@ public class XCodeBuilder extends Builder {
 //                artifactVersion = output.toString().trim();
         }
         
-        if( false == StringUtils.isEmpty(overrideMarketingNumber) ) {
-            listener.getLogger().println("Updating marketing version to " + overrideMarketingNumber);
+        if( false == StringUtils.isEmpty(expanded_overrideMarketingNumber) ) {
+            listener.getLogger().println("Updating marketing version to " + expanded_overrideMarketingNumber);
             
-            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-marketing-version", overrideMarketingNumber ).stdout(listener).pwd(projectRoot).join();
+            returnCode = launcher.launch().envs(envs).cmds(getDescriptor().agvtoolPath(), "new-marketing-version", expanded_overrideMarketingNumber ).stdout(listener).pwd(projectRoot).join();
             if(returnCode>0) {
-                listener.fatalError("Could not set marketing version to " + overrideMarketingNumber);
+                listener.fatalError("Could not set marketing version to " + expanded_overrideMarketingNumber);
             }
         }
 
@@ -181,34 +191,34 @@ public class XCodeBuilder extends Builder {
         StringBuilder xcodeReport = new StringBuilder("Going to invoke xcodebuild: ");
         XCodeBuildOutputParser reportGenerator = new XCodeBuildOutputParser(projectRoot, listener);
         List<String> commandLine = Lists.newArrayList(getDescriptor().xcodebuildPath());
-        if(StringUtils.isEmpty(target)) {
+        if(StringUtils.isEmpty(expanded_target)) {
             commandLine.add("-alltargets");
             xcodeReport.append("target: ALL");
         } else {
             commandLine.add("-target");
-            commandLine.add(target);
-            xcodeReport.append("target: ").append(target);
+            commandLine.add(expanded_target);
+            xcodeReport.append("target: ").append(expanded_target);
         }
         
-        if(!StringUtils.isEmpty(sdk)) {
+        if(!StringUtils.isEmpty(expanded_sdk)) {
             commandLine.add("-sdk");
-            commandLine.add(sdk);
-            xcodeReport.append(", sdk: ").append(sdk);
+            commandLine.add(expanded_sdk);
+            xcodeReport.append(", sdk: ").append(expanded_sdk);
         } else {
             xcodeReport.append(", sdk: DEFAULT");
         }
 
-        if(!StringUtils.isEmpty(xcodeProjectFile)) {
+        if(!StringUtils.isEmpty(expanded_xcodeProjectFile)) {
             commandLine.add("-project");
             commandLine.add(xcodeProjectFile);
-            xcodeReport.append(", project: ").append(xcodeProjectFile);
+            xcodeReport.append(", project: ").append(expanded_xcodeProjectFile);
         } else {
             xcodeReport.append(", project: DEFAULT");
         }
 
         commandLine.add("-configuration");
-        commandLine.add(configuration);
-        xcodeReport.append(", configuration: ").append(configuration);
+        commandLine.add(expanded_configuration);
+        xcodeReport.append(", configuration: ").append(expanded_configuration);
 
 //        if (cleanBeforeBuild) {
 //            commandLine.add("clean");
@@ -235,7 +245,7 @@ public class XCodeBuilder extends Builder {
             List<FilePath> apps = buildDirectory.list(new AppFileFilter());
 
             for(FilePath app : apps) {
-                String baseName = app.getBaseName() + "-" + configuration + "-" + build.getProject().getName() + "-" + versionNumber;
+                String baseName = app.getBaseName() + "-" + expanded_configuration + "-" + build.getProject().getName() + "-" + versionNumber;
                 FilePath ipaLocation = buildDirectory.child(baseName + ".ipa");
 
                 FilePath payload = buildDirectory.child("Payload");
@@ -248,15 +258,15 @@ public class XCodeBuilder extends Builder {
                 packageCommandLine.add("/usr/bin/xcrun");
                 packageCommandLine.add("-sdk");
 
-                if(!StringUtils.isEmpty(sdk)) {
-                    packageCommandLine.add(sdk);
+                if(!StringUtils.isEmpty(expanded_sdk)) {
+                    packageCommandLine.add(expanded_sdk);
                 } else {
                     packageCommandLine.add("iphoneos");
                 }
                 packageCommandLine.addAll(Lists.newArrayList("PackageApplication", "-v", app.toString(), "-o", ipaLocation.toString()));
-                if(!StringUtils.isEmpty(embeddedProfileFile)) {
+                if(!StringUtils.isEmpty(expanded_embeddedProfileFile)) {
                     packageCommandLine.add("--embed");
-                    packageCommandLine.add(embeddedProfileFile);
+                    packageCommandLine.add(expanded_embeddedProfileFile);
                 }
                 
                 returnCode = launcher.launch().envs(envs).stdout(listener).pwd(projectRoot).cmds(packageCommandLine).join();
