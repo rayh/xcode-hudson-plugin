@@ -133,11 +133,18 @@ public class XCodeBuildOutputParser {
         m = END_TESTCASE.matcher(line);
         if(m.matches()) {
             requireTestSuite();
-            requireTestCase(m.group(1));
-
-            currentTestCase.setTime(Float.valueOf(m.group(2)));
-            currentTestSuite.getTestCases().add(currentTestCase);
-            currentTestSuite.addTest();
+            //requireTestCase(m.group(1));
+            String currentTestCaseName = m.group(1);
+            
+            if(currentTestCase != null) {
+            		currentTestCase.setTime(Float.valueOf(m.group(2)));
+            		currentTestSuite.getTestCases().add(currentTestCase);
+            		currentTestSuite.addTest();
+            }else {
+	            	currentTestSuite.getTestCases().add(new TestCase(currentTestSuite.getName(), currentTestCaseName));
+	        		currentTestSuite.addTest();
+            }
+            
             currentTestCase = null;
             return;
         }
